@@ -1,10 +1,13 @@
 package fault_test
 
 import (
-	"github.com/github/fault"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
+
+	"github.com/github/fault"
 )
 
 const (
@@ -21,10 +24,10 @@ var testHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 	w.Write([]byte(testHandlerBody))
 })
 
-func testRequest(t *testing.T) *http.Request {
+func testRequest(t *testing.T, ctx context.Context) *http.Request {
 	t.Helper()
 
-	req, err := http.NewRequest("GET", "/", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "/", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +38,60 @@ func testRequest(t *testing.T) *http.Request {
 func sendRequest(t *testing.T, f *fault.Fault) *httptest.ResponseRecorder {
 	t.Helper()
 
-	req := testRequest(t)
+	req := testRequest(t, context.Background())
+	rr := httptest.NewRecorder()
+	app := f.Handler(testHandler)
+	app.ServeHTTP(rr, req)
+
+	return rr
+}
+
+func sendRequestExpectTimeout(t *testing.T, f *fault.Fault, to time.Duration) *httptest.ResponseRecorder {
+	t.Helper()
+
+	done := make(chan bool, 1)
+
+	ctx, cancel := context.WithTimeout(context.Background(), to)
+	defer cancel()
+
+	req := testRequest(t, ctx)
+	rr := httptest.NewRecorder()
+	app := f.Handler(testHandler)
+
+	go func() {
+		// If we don't reach timeout it's common in our tests that we panic, catch that here
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("expected: fail with timeout %v got: panic", to)
+			}
+		}()
+		app.ServeHTTP(rr, req)
+		done <- true
+	}()
+
+	select {
+	case <-done:
+		t.Errorf("expected to fail with timeout %v", to)
+	case <-ctx.Done():
+		return rr
+	}
+
+	return rr
+}
+
+func sendRequestExpectPanic(t *testing.T, f *fault.Fault) *httptest.ResponseRecorder {
+	t.Helper()
+
+	// Recover from our expected http.ErrAbortHandler panics but fail on others
+	defer func() {
+		if r := recover(); r != nil {
+			if r != http.ErrAbortHandler {
+				t.Fatal(r)
+			}
+		}
+	}()
+
+	req := testRequest(t, context.Background())
 	rr := httptest.NewRecorder()
 	app := f.Handler(testHandler)
 	app.ServeHTTP(rr, req)
