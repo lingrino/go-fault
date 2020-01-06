@@ -57,20 +57,20 @@ type Options struct {
 // Fault is middleware that does fault injection on incoming
 // requests based on the configured options
 type Fault struct {
-	// opt holds our configuration for this middleware
-	opt Options
+	// Opt holds our configuration for this middleware
+	Opt Options
 }
 
 // New returns a new Fault middleware with the supplied options
 func New(o Options) *Fault {
 	return &Fault{
-		opt: o,
+		Opt: o,
 	}
 }
 
 // Handler implements http.HandlerFunc to use with net/http
 func (f *Fault) Handler(h http.Handler) http.Handler {
-	if f.opt.Enabled {
+	if f.Opt.Enabled {
 		return f.process(h)
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +81,7 @@ func (f *Fault) Handler(h http.Handler) http.Handler {
 // process is the main handler that decides which fault-specific handler
 // to call or does nothing if our type is invalid
 func (f *Fault) process(h http.Handler) http.Handler {
-	switch f.opt.Type {
+	switch f.Opt.Type {
 	case TypeReject:
 		return f.processReject(h)
 	case TypeError:
@@ -98,7 +98,7 @@ func (f *Fault) process(h http.Handler) http.Handler {
 // processReject is the handler used when a REJECT fault type is provided
 func (f *Fault) processReject(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if percentDo(f.opt.PercentOfRequests) {
+		if percentDo(f.Opt.PercentOfRequests) {
 			// This is a specialized and documented way of sending an interrupted
 			// response to the client without printing the panic stack trace or erroring.
 			// https://golang.org/pkg/net/http/#Handler
@@ -112,13 +112,13 @@ func (f *Fault) processReject(h http.Handler) http.Handler {
 // processError is the handler used when an ERROR fault type is provided
 func (f *Fault) processError(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if percentDo(f.opt.PercentOfRequests) {
+		if percentDo(f.Opt.PercentOfRequests) {
 			// Continue normally if we don't have a valid status code
-			if http.StatusText(f.opt.Value) == "" {
+			if http.StatusText(f.Opt.Value) == "" {
 				h.ServeHTTP(w, r)
 			}
 
-			w.WriteHeader(f.opt.Value)
+			w.WriteHeader(f.Opt.Value)
 			return
 		}
 
@@ -129,8 +129,8 @@ func (f *Fault) processError(h http.Handler) http.Handler {
 // processSlow is the handler used when a SLOW fault type is provided
 func (f *Fault) processSlow(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if percentDo(f.opt.PercentOfRequests) {
-			time.Sleep(time.Duration(f.opt.Value) * time.Millisecond)
+		if percentDo(f.Opt.PercentOfRequests) {
+			time.Sleep(time.Duration(f.Opt.Value) * time.Millisecond)
 		}
 
 		h.ServeHTTP(w, r)
