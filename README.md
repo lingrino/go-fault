@@ -11,12 +11,11 @@ curl -v localhost:3000
 ## Testing
 
 ```shell
-go test -v -cover -race ./...
+go test -v -cover -race
 ```
 
 TODO:
 
-- GitHub Actions to run CI
 - Readme shows how to launch godoc
 - Makefile for tests, docs, docker
 - Benchmarks
