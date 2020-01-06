@@ -7,8 +7,6 @@ import (
 )
 
 const (
-	// TypeDrop throws away the request with no response
-	TypeDrop = "DROP"
 	// TypeReject sends an empty reply back
 	TypeReject = "REJECT"
 	// TypeError injects http errors into the request
@@ -42,11 +40,10 @@ type Options struct {
 	// Set to true to enable the Fault middleware
 	Enabled bool
 
-	// DROP, REJECT, ERROR, SLOW
+	// REJECT, ERROR, SLOW
 	// Use the provided type constants (eg fault.TypeError) to prevent typos
 	Type string
 
-	// DROP:  ms before returning an empty reply (default 5 minutes)
 	// REJECT n/a
 	// ERROR: http error to return
 	// SLOW:  ms to wait
@@ -85,8 +82,6 @@ func (f *Fault) Handler(h http.Handler) http.Handler {
 // to call or does nothing if our type is invalid
 func (f *Fault) process(h http.Handler) http.Handler {
 	switch f.opt.Type {
-	case TypeDrop:
-		return f.processDrop(h)
 	case TypeReject:
 		return f.processReject(h)
 	case TypeError:
@@ -98,31 +93,6 @@ func (f *Fault) process(h http.Handler) http.Handler {
 			h.ServeHTTP(w, r)
 		})
 	}
-}
-
-// processDrop is the handler used when a DROP fault type is provided
-func (f *Fault) processDrop(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if percentDo(f.opt.PercentOfRequests) {
-			// I don't see a way to truly drop (never respond) an http request within the standard go
-			// http stack. An option is http.Hijack() but it does not work on HTTP/2 connections. Dropped
-			// requests in the context of fault injection are useful for testing timeouts, and we can
-			// simulate that by sleeping for a long (5 minutes) period of time before eventuall returning
-			// an empty response.
-			if f.opt.Value == 0 {
-				time.Sleep(5 * time.Minute)
-			} else {
-				time.Sleep(time.Duration(f.opt.Value) * time.Millisecond)
-			}
-
-			// This is a specialized and documented way of sending an interrupted
-			// response to the client without printing the panic stack trace or erroring.
-			// https://golang.org/pkg/net/http/#Handler
-			panic(http.ErrAbortHandler)
-		}
-
-		h.ServeHTTP(w, r)
-	})
 }
 
 // processReject is the handler used when a REJECT fault type is provided

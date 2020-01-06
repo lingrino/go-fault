@@ -2,7 +2,6 @@
 
 TODO:
 
-- Maybe get rid of DROP fault type?
 - Provide docker image to make requuests against
 - GitHub Actions to run CI
 - Readme shows how to launch godoc
