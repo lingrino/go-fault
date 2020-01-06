@@ -1,5 +1,12 @@
 # Chaos Fault Injection
 
+## Docs
+
+```shell
+godoc -http=:6060
+http://localhost:6060/pkg/github.com/github/fault/
+```
+
 ## Docker
 
 ```shell
@@ -16,8 +23,6 @@ go test -v -cover -race
 
 TODO:
 
-- Readme shows how to launch godoc
-- Makefile for tests, docs, docker
 - Benchmarks
 - Implementation examples
 - Implementations for non net/http middlewares?
