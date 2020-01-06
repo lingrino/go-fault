@@ -1,8 +1,21 @@
 # Chaos Fault Injection
 
+## Docker
+
+```shell
+docker build -t faulttest .
+docker run -d -p 3000:3000 faulttest
+curl -v localhost:3000
+```
+
+## Testing
+
+```shell
+go test -v -cover -race ./...
+```
+
 TODO:
 
-- Provide docker image to make requuests against
 - GitHub Actions to run CI
 - Readme shows how to launch godoc
 - Makefile for tests, docs, docker
