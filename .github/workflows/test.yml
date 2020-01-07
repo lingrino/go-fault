@@ -20,3 +20,5 @@ jobs:
         run: test -z $(gofmt -l -w -s ./)
       - name: Test
         run: go test -v -cover -race
+      - name: Benchmark
+        run: go test -run=XXX -bench=.
