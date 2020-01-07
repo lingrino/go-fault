@@ -74,9 +74,22 @@ ok      github.com/github/fault 2.970s
 
 ## Benchmarks
 
-The fault package is safe to leave implemented even when you are not running a fault injection. If you set `fault.Opt.Enabled` to `false` there should be no performance degradation compared to removing the package from the request path. If you have `fault.Opt.Enabled` set to `true` there may be very minor performance differences, but this will only be the case *while you are already doing fault injection.*
+The fault package is safe to leave implemented even when you are not running a fault injection. If you set `fault.Opt.Enabled` to `false` there should be negligible performance degradation compared to removing the package from the request path. If you have `fault.Opt.Enabled` set to `true` there may be very minor performance differences, but this will only be the case *while you are already doing fault injection.*
 
-There will soon be benchmarks that verify these claims and prevent changes that cause performance degradation.
+Benchmarks are provided to compare without faults, with faults disabled, and with faults enabled. Run them with:
+
+```shell
+$ go test -run=XXX -bench=.
+goos: darwin
+goarch: amd64
+pkg: github.com/github/fault
+BenchmarkNoFault-8                        646394              1842 ns/op
+BenchmarkFaultDisabled-8                  629494              1912 ns/op
+BenchmarkFaultErrorZeroPercent-8          613152              1994 ns/op
+BenchmarkFaultError100Percent-8           664226              1779 ns/op
+PASS
+ok      github.com/github/fault 8.525s
+```
 
 ## Status
 
