@@ -25,7 +25,7 @@ var mainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 func main() {
         slowFault := fault.New(fault.Options{
                 Enabled:           true,
-                Type:              fault.TypeSlow,
+                Type:              fault.Slow,
                 Value:             2000, // 2 seconds
                 PercentOfRequests: 0.25, // 25%
         })
@@ -82,9 +82,6 @@ There will soon be benchmarks that verify these claims and prevent changes that 
 
 The package is mostly implemented, however breaking API changes may still happen before the `v1.0.0` release. The fault package is intentionally simple and new features are unlikely to be implemented. Here are a few things that may still be added before `v1.0.0`.
 
-- Option to make chained middleware depend on earlier faults (% slow then always error)
-- Option to set a context value on the request if fault injection was done
-- Option to return a header (will not work on reject) if fault injection was done
+- Option to always run faults if a certain header is passed
 - Option to customize the response body on error faults
 - Option to slow requests in a random distribution instead of a fixed value
-- Option to always run faults if a certain header is passed

@@ -82,7 +82,7 @@ func TestHelperPercentDo(t *testing.T) {
 
 			f := fault.New(fault.Options{
 				Enabled:           true,
-				Type:              fault.TypeError,
+				Type:              fault.Error,
 				Value:             500,
 				PercentOfRequests: tc.percentRequests,
 			})
@@ -126,7 +126,7 @@ func TestHandlerReject(t *testing.T) {
 
 			f := fault.New(fault.Options{
 				Enabled:           true,
-				Type:              fault.TypeReject,
+				Type:              fault.Reject,
 				PercentOfRequests: tc.percentOfRequests,
 			})
 
@@ -183,7 +183,7 @@ func TestHandlerError(t *testing.T) {
 
 			f := fault.New(fault.Options{
 				Enabled:           true,
-				Type:              fault.TypeError,
+				Type:              fault.Error,
 				Value:             tc.sendCode,
 				PercentOfRequests: 1.0,
 			})
@@ -209,23 +209,25 @@ func TestHandlerSlow(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		sendMs         int
-		expectMs       time.Duration
-		allowableRange time.Duration
+		sendMs            int
+		expectMs          time.Duration
+		allowableRange    time.Duration
+		percentOfRequests float64
 	}{
-		{-10, 0 * time.Millisecond, 1 * time.Millisecond},
-		{0, 0 * time.Millisecond, 1 * time.Millisecond},
-		{1, 1 * time.Millisecond, 3 * time.Millisecond},
-		{10, 10 * time.Millisecond, 5 * time.Millisecond},
-		{39, 39 * time.Millisecond, 5 * time.Millisecond},
-		{75, 75 * time.Millisecond, 5 * time.Millisecond},
+		{-10, 0 * time.Millisecond, 1 * time.Millisecond, 1.0},
+		{0, 0 * time.Millisecond, 1 * time.Millisecond, 0.0},
+		{0, 0 * time.Millisecond, 1 * time.Millisecond, 1.0},
+		{1, 1 * time.Millisecond, 3 * time.Millisecond, 1.0},
+		{10, 10 * time.Millisecond, 5 * time.Millisecond, 1.0},
+		{39, 39 * time.Millisecond, 5 * time.Millisecond, 1.0},
+		{75, 75 * time.Millisecond, 5 * time.Millisecond, 1.0},
 	}
 
 	// First measure the time it takes to run with a 1ms wait, so that we
 	// can substract "the speed of the system" from the "correct sleep time"
 	f := fault.New(fault.Options{
 		Enabled:           true,
-		Type:              fault.TypeSlow,
+		Type:              fault.Slow,
 		Value:             1,
 		PercentOfRequests: 1.0,
 	})
@@ -242,19 +244,19 @@ func TestHandlerSlow(t *testing.T) {
 
 			f := fault.New(fault.Options{
 				Enabled:           true,
-				Type:              fault.TypeSlow,
+				Type:              fault.Slow,
 				Value:             tc.sendMs,
-				PercentOfRequests: 1.0,
+				PercentOfRequests: tc.percentOfRequests,
 			})
 
 			t0 := time.Now()
 			rr := sendRequest(t, f)
 			took := time.Since(t0)
 
-			minD := time.Duration(tc.expectMs) + benchD
+			minD := time.Duration(tc.expectMs)
 			maxD := time.Duration(tc.expectMs) + tc.allowableRange + benchD
 
-			if took > maxD {
+			if took < minD || took > maxD {
 				t.Errorf("wrong latency duration. expected: %v < duration < %v got: %v", minD, maxD, took)
 			}
 
@@ -267,4 +269,89 @@ func TestHandlerSlow(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestHandlerChained tests how we handle chained faults, where we run one fault after
+// another and we expect the second fault to ALWAYS activate if the first fault activated.
+func TestHandlerChained(t *testing.T) {
+	t.Parallel()
+
+	// First test that the chained fault ALWAYS runs when the first fault is injected.
+	t.Run("always", func(t *testing.T) {
+		t.Parallel()
+
+		f1 := fault.New(fault.Options{
+			Enabled:           true,
+			Type:              fault.Slow,
+			Value:             10,
+			PercentOfRequests: 1.0,
+		})
+
+		f2 := fault.New(fault.Options{
+			Enabled:           true,
+			Type:              fault.Error,
+			Value:             500,
+			PercentOfRequests: 0.0,
+			Chained:           true,
+		})
+
+		t0 := time.Now()
+		rr := sendRequest(t, f2, f1)
+		took := time.Since(t0)
+
+		minD := time.Duration(10 * time.Millisecond)
+		maxD := time.Duration(13 * time.Millisecond)
+
+		if took < minD || took > maxD {
+			t.Errorf("wrong latency duration. expected: %v < duration < %v got: %v", minD, maxD, took)
+		}
+
+		if rr.Code != http.StatusInternalServerError {
+			t.Errorf("wrong status code. expected: %v got: %v", http.StatusInternalServerError, rr.Code)
+		}
+
+		if rr.Body.String() != "" {
+			t.Errorf("wrong body. expected: %v got: %v", "", rr.Body.String())
+		}
+
+	})
+
+	// Next test that the chained fault NEVER runs when the first fault is not injected
+	t.Run("never", func(t *testing.T) {
+		t.Parallel()
+
+		f1 := fault.New(fault.Options{
+			Enabled:           true,
+			Type:              fault.Slow,
+			Value:             10,
+			PercentOfRequests: 0.0,
+		})
+
+		f2 := fault.New(fault.Options{
+			Enabled:           true,
+			Type:              fault.Error,
+			Value:             500,
+			PercentOfRequests: 1.0,
+			Chained:           true,
+		})
+
+		t0 := time.Now()
+		rr := sendRequest(t, f2, f1)
+		took := time.Since(t0)
+
+		maxD := time.Duration(3 * time.Millisecond)
+
+		if took > maxD {
+			t.Errorf("wrong latency duration. expected: duration < %v got: %v", maxD, took)
+		}
+
+		if rr.Code != http.StatusOK {
+			t.Errorf("wrong status code. expected: %v got: %v", http.StatusOK, rr.Code)
+		}
+
+		if rr.Body.String() != testHandlerBody {
+			t.Errorf("wrong body. expected: %v got: %v", testHandlerBody, rr.Body.String())
+		}
+
+	})
 }

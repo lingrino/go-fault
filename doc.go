@@ -14,7 +14,7 @@ the faults and it is up to the consumer of the package to decide how to manage t
 fault options (feature flags, environment variables, deploys, etc...).
 
 Note that you can always insert the middleware twice if you (for example) want
-to REJECT a request after a 100ms SLOW.
+to REJECT a request after a 100ms SLOW. See the "Combining Faults" section for more.
 
 Fault will always default to a "do nothing, pass request on" state if the provided
 options are invalid. If you are not seeing faults injected like you expect you may
@@ -25,13 +25,20 @@ Fault Types
 
 There are three type of faults that can be injected.
 
-	fault.TypeReject
-	fault.TypeError
-	fault.TypeSlow
+	fault.Reject
+	fault.Error
+	fault.Slow
+
+The faults can be divided into two types. Those that continue (fault.Slow) and those
+that return (fault.Reject, fault.Error). For faults that continue, a context value of
+fault.FaultInjected will be added to the request and equal to the fault.Type (eg: fault.Slow)
+that ran. This value is used in the package for fault.Opt.Chained requests, but can
+also be used by any middleware further down the chain. If r.Context().Value(FaultInjected)
+is nil ("") then a fault middleware was evaluated but did not iunject.
 
 Reject
 
-Use fault.TypeReject to immediately return an empty response. For example, a curl
+Use fault.Reject to immediately return an empty response. For example, a curl
 for a rejected response will produce:
 
 	$ curl https://github.com
@@ -39,7 +46,7 @@ for a rejected response will produce:
 
 Error
 
-Use fault.TypeError to immediately return an http status code of your choosing.
+Use fault.Error to immediately return an http status code of your choosing.
 For example, you can return a 200, 301, 404, 500, or any other valid status code
 to test how your clients respond to different statuses. If you enter an invalid
 status code the middleware will pass on the request without a response.
@@ -50,7 +57,7 @@ of the header or body that you have already written.
 
 Slow
 
-Use fault.TypeSlow to wait a configured amount of milliseconds before proceeding
+Use fault.Slow to wait a configured amount of milliseconds before proceeding
 with the request as normal. For example, you can use the Slow fault type to add
 a 10ms delay to half of your incoming requests.
 
@@ -65,9 +72,9 @@ and 1% of requests will be rejected.
 
 Second, you might want to combine faults such that 1% of requests will be slowed
 for 10ms and then rejected. These two faults depend on each other. It is possible
-to add this capability with the fault package by setting the TODO flag in the
-chained (2nd) Options struct. When you do this the second fault will only be
-injected if the fault before it was activated.
+to add this capability with the fault package by setting the Chained flag in the
+chained (2nd) Options struct. When you do this the second fault will only/always
+be injected if the fault before it was activated.
 
 Configuration
 

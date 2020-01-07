@@ -22,20 +22,20 @@ func main() {
 
 	rejectFault := fault.New(fault.Options{
 		Enabled:           true,
-		Type:              fault.TypeReject,
+		Type:              fault.Reject,
 		PercentOfRequests: 0.25,
 	})
 
 	errorFault := fault.New(fault.Options{
 		Enabled:           true,
-		Type:              fault.TypeError,
+		Type:              fault.Error,
 		Value:             500,
 		PercentOfRequests: 0.25,
 	})
 
 	slowFault := fault.New(fault.Options{
 		Enabled:           true,
-		Type:              fault.TypeSlow,
+		Type:              fault.Slow,
 		Value:             2000, // 2 seconds
 		PercentOfRequests: 0.25,
 	})

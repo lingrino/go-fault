@@ -1,18 +1,26 @@
 package fault
 
 import (
+	"context"
 	"math/rand"
 	"net/http"
 	"time"
 )
 
+// Type is the type of fault injection (REJECT, ERROR, SLOW) to be run
+type Type string
+
 const (
-	// TypeReject sends an empty reply back
-	TypeReject = "REJECT"
-	// TypeError injects http errors into the request
-	TypeError = "ERROR"
-	// TypeSlow injects latency into the request
-	TypeSlow = "SLOW"
+	// Reject sends an empty reply back
+	Reject Type = "REJECT"
+	// Error injects http errors into the request
+	Error Type = "ERROR"
+	// Slow injects latency into the request
+	Slow Type = "SLOW"
+
+	// FaultInjected is passed in the request context of all non-returning (SLOW)
+	// fault types. This value supports the Chained functionality.
+	FaultInjected Type = ""
 )
 
 // Options is a struct for specifying all configuration
@@ -22,8 +30,8 @@ type Options struct {
 	Enabled bool
 
 	// REJECT, ERROR, SLOW
-	// Use the provided type constants (eg fault.TypeError) to prevent typos
-	Type string
+	// Use the provided type constants (eg fault.Error) to prevent typos
+	Type Type
 
 	// REJECT n/a
 	// ERROR: http error to return
@@ -33,6 +41,11 @@ type Options struct {
 	// The percent of requests that should have the fault injected.
 	// 0.0 <= percent <= 1.0
 	PercentOfRequests float64
+
+	// Set to true if this fault should only activate when a non-returning (SLOW)
+	// fault higher up the chain has activated. This ignores PercentOfRequests.
+	// Use to chain faults like 20% SLOW then REJECT.
+	Chained bool
 }
 
 // Fault is middleware that does fault injection on incoming
@@ -61,8 +74,18 @@ func (f *Fault) Handler(h http.Handler) http.Handler {
 
 // percentDo takes a percent (0.0 <= per <= 1.0)
 // and randomly returns true that percent of the time
-func (f *Fault) percentDo() bool {
+func (f *Fault) percentDo(r *http.Request) bool {
 	var proceed bool
+
+	// Always proceed on chained requests where an earlier fault
+	// has already been injected. Do nothing if fault.Chained
+	// but no earlier fault was injected.
+	if f.Opt.Chained {
+		if r.Context().Value(FaultInjected) != nil {
+			return true
+		}
+		return false
+	}
 
 	// bias false if p < 0.0, p > 1.0
 	if f.Opt.PercentOfRequests > 1.0 || f.Opt.PercentOfRequests < 0.0 {
@@ -70,8 +93,8 @@ func (f *Fault) percentDo() bool {
 	}
 
 	// 0.0 <= r < 1.0
-	r := rand.Float64()
-	if r < f.Opt.PercentOfRequests {
+	rn := rand.Float64()
+	if rn < f.Opt.PercentOfRequests {
 		return true
 	}
 
@@ -82,11 +105,11 @@ func (f *Fault) percentDo() bool {
 // to call or does nothing if our type is invalid
 func (f *Fault) process(h http.Handler) http.Handler {
 	switch f.Opt.Type {
-	case TypeReject:
+	case Reject:
 		return f.processReject(h)
-	case TypeError:
+	case Error:
 		return f.processError(h)
-	case TypeSlow:
+	case Slow:
 		return f.processSlow(h)
 	default:
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -98,7 +121,7 @@ func (f *Fault) process(h http.Handler) http.Handler {
 // processReject is the handler used when a REJECT fault type is provided
 func (f *Fault) processReject(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if f.percentDo() {
+		if f.percentDo(r) {
 			// This is a specialized and documented way of sending an interrupted
 			// response to the client without printing the panic stack trace or erroring.
 			// https://golang.org/pkg/net/http/#Handler
@@ -112,7 +135,7 @@ func (f *Fault) processReject(h http.Handler) http.Handler {
 // processError is the handler used when an ERROR fault type is provided
 func (f *Fault) processError(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if f.percentDo() {
+		if f.percentDo(r) {
 			// Continue normally if we don't have a valid status code
 			if http.StatusText(f.Opt.Value) == "" {
 				h.ServeHTTP(w, r)
@@ -129,10 +152,13 @@ func (f *Fault) processError(h http.Handler) http.Handler {
 // processSlow is the handler used when a SLOW fault type is provided
 func (f *Fault) processSlow(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if f.percentDo() {
+		if f.percentDo(r) {
 			time.Sleep(time.Duration(f.Opt.Value) * time.Millisecond)
-		}
+			ctx := context.WithValue(r.Context(), FaultInjected, Slow)
 
-		h.ServeHTTP(w, r)
+			h.ServeHTTP(w, r.WithContext(ctx))
+		} else {
+			h.ServeHTTP(w, r)
+		}
 	})
 }

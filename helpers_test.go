@@ -24,6 +24,7 @@ var testHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 	w.Write([]byte(testHandlerBody))
 })
 
+// testRequest abstracts creating a standard request that we use in all tests
 func testRequest(t *testing.T, ctx context.Context) *http.Request {
 	t.Helper()
 
@@ -35,17 +36,28 @@ func testRequest(t *testing.T, ctx context.Context) *http.Request {
 	return req
 }
 
-func sendRequest(t *testing.T, f *fault.Fault) *httptest.ResponseRecorder {
+// sendRequest abstracts sending a standard request with N number of faults
+// chained before our testHandler. The faults that are passed first in the
+// list will execute last in the chain.
+func sendRequest(t *testing.T, fs ...*fault.Fault) *httptest.ResponseRecorder {
 	t.Helper()
 
 	req := testRequest(t, context.Background())
 	rr := httptest.NewRecorder()
-	app := f.Handler(testHandler)
+
+	app := fs[0].Handler(testHandler)
+
+	for _, f := range fs[1:] {
+		app = f.Handler(app)
+	}
+
 	app.ServeHTTP(rr, req)
 
 	return rr
 }
 
+// sendRequestExpectTimeout does the same as sendRequest except that the test will
+// fail if we don't receive a timeout in the configured amount of time.
 func sendRequestExpectTimeout(t *testing.T, f *fault.Fault, to time.Duration) *httptest.ResponseRecorder {
 	t.Helper()
 
@@ -62,7 +74,7 @@ func sendRequestExpectTimeout(t *testing.T, f *fault.Fault, to time.Duration) *h
 		// If we don't reach timeout it's common in our tests that we panic, catch that here
 		defer func() {
 			if r := recover(); r != nil {
-				t.Errorf("expected: fail with timeout %v got: panic", to)
+				t.Errorf("expected: fail with timeout %v got: panic: %v", to, r)
 			}
 		}()
 		app.ServeHTTP(rr, req)
@@ -79,6 +91,8 @@ func sendRequestExpectTimeout(t *testing.T, f *fault.Fault, to time.Duration) *h
 	return rr
 }
 
+// sendRequestExpectPanic does the same as sendRequest except that the test
+// will fail if we don't receive an http.ErrAbortHandler panic.
 func sendRequestExpectPanic(t *testing.T, f *fault.Fault) *httptest.ResponseRecorder {
 	t.Helper()
 
