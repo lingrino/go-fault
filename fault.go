@@ -15,25 +15,6 @@ const (
 	TypeSlow = "SLOW"
 )
 
-// percentDo takes a percent (0.0 <= per <= 1.0)
-// and randomly returns true that percent of the time
-func percentDo(p float64) bool {
-	var proceed bool
-
-	// bias false if p < 0.0, p > 1.0
-	if p > 1.0 || p < 0.0 {
-		return false
-	}
-
-	// 0.0 <= r < 1.0
-	r := rand.Float64()
-	if r < p {
-		return true
-	}
-
-	return proceed
-}
-
 // Options is a struct for specifying all configuration
 // to the fault.Fault middleware
 type Options struct {
@@ -78,6 +59,25 @@ func (f *Fault) Handler(h http.Handler) http.Handler {
 	})
 }
 
+// percentDo takes a percent (0.0 <= per <= 1.0)
+// and randomly returns true that percent of the time
+func (f *Fault) percentDo() bool {
+	var proceed bool
+
+	// bias false if p < 0.0, p > 1.0
+	if f.Opt.PercentOfRequests > 1.0 || f.Opt.PercentOfRequests < 0.0 {
+		return false
+	}
+
+	// 0.0 <= r < 1.0
+	r := rand.Float64()
+	if r < f.Opt.PercentOfRequests {
+		return true
+	}
+
+	return proceed
+}
+
 // process is the main handler that decides which fault-specific handler
 // to call or does nothing if our type is invalid
 func (f *Fault) process(h http.Handler) http.Handler {
@@ -98,7 +98,7 @@ func (f *Fault) process(h http.Handler) http.Handler {
 // processReject is the handler used when a REJECT fault type is provided
 func (f *Fault) processReject(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if percentDo(f.Opt.PercentOfRequests) {
+		if f.percentDo() {
 			// This is a specialized and documented way of sending an interrupted
 			// response to the client without printing the panic stack trace or erroring.
 			// https://golang.org/pkg/net/http/#Handler
@@ -112,7 +112,7 @@ func (f *Fault) processReject(h http.Handler) http.Handler {
 // processError is the handler used when an ERROR fault type is provided
 func (f *Fault) processError(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if percentDo(f.Opt.PercentOfRequests) {
+		if f.percentDo() {
 			// Continue normally if we don't have a valid status code
 			if http.StatusText(f.Opt.Value) == "" {
 				h.ServeHTTP(w, r)
@@ -129,7 +129,7 @@ func (f *Fault) processError(h http.Handler) http.Handler {
 // processSlow is the handler used when a SLOW fault type is provided
 func (f *Fault) processSlow(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if percentDo(f.Opt.PercentOfRequests) {
+		if f.percentDo() {
 			time.Sleep(time.Duration(f.Opt.Value) * time.Millisecond)
 		}
 
