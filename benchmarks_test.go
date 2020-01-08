@@ -60,39 +60,36 @@ func sendRequestBenchmark(b *testing.B, fs ...*fault.Fault) *httptest.ResponseRe
 	return rr
 }
 
-// BenchmarkNoFault is our baseline benchmark to compare others against.
-// It benchmarks requests against our benchmarkHandler without a fault
-func BenchmarkNoFault(b *testing.B) {
+// runBenchmark abstracts benchmarking the request
+func runBenchmark(b *testing.B, fs ...*fault.Fault) {
 	var rr *httptest.ResponseRecorder
 
 	for n := 0; n < b.N; n++ {
-		rr = sendRequestBenchmark(b)
+		rr = sendRequestBenchmark(b, fs...)
 	}
 
 	result = rr
+}
+
+// BenchmarkNoFault is our baseline benchmark to compare others against.
+// It benchmarks requests against our benchmarkHandler without a fault
+func BenchmarkNoFault(b *testing.B) {
+	runBenchmark(b)
 }
 
 // BenchmarkFaultDisabled benchmarks with the fault middleware in the
 // request path but disabled.
 func BenchmarkFaultDisabled(b *testing.B) {
-	var rr *httptest.ResponseRecorder
-
 	f := fault.New(fault.Options{
 		Enabled: false,
 	})
 
-	for n := 0; n < b.N; n++ {
-		rr = sendRequestBenchmark(b, f)
-	}
-
-	result = rr
+	runBenchmark(b, f)
 }
 
 // BenchmarkFaultErrorZeroPercent benchmarks the fault.Error Type when
 // the fault is enabled but PercentOfRequests is 0.0
 func BenchmarkFaultErrorZeroPercent(b *testing.B) {
-	var rr *httptest.ResponseRecorder
-
 	f := fault.New(fault.Options{
 		Enabled:           true,
 		Type:              fault.Error,
@@ -100,18 +97,12 @@ func BenchmarkFaultErrorZeroPercent(b *testing.B) {
 		PercentOfRequests: 0.0,
 	})
 
-	for n := 0; n < b.N; n++ {
-		rr = sendRequestBenchmark(b, f)
-	}
-
-	result = rr
+	runBenchmark(b, f)
 }
 
 // BenchmarkFaultError100Percent benchmarks the fault.Error Type when
 // the fault is enabled and PercentOfRequests is 1.0
 func BenchmarkFaultError100Percent(b *testing.B) {
-	var rr *httptest.ResponseRecorder
-
 	f := fault.New(fault.Options{
 		Enabled:           true,
 		Type:              fault.Error,
@@ -119,9 +110,5 @@ func BenchmarkFaultError100Percent(b *testing.B) {
 		PercentOfRequests: 1.0,
 	})
 
-	for n := 0; n < b.N; n++ {
-		rr = sendRequestBenchmark(b, f)
-	}
-
-	result = rr
+	runBenchmark(b, f)
 }
