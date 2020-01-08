@@ -136,12 +136,14 @@ func (f *Fault) processReject(h http.Handler) http.Handler {
 func (f *Fault) processError(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if f.percentDo(r) {
+			statusText := http.StatusText(f.Opt.Value)
 			// Continue normally if we don't have a valid status code
-			if http.StatusText(f.Opt.Value) == "" {
+			if statusText == "" {
 				h.ServeHTTP(w, r)
+			} else {
+				http.Error(w, statusText, f.Opt.Value)
 			}
 
-			w.WriteHeader(f.Opt.Value)
 			return
 		}
 

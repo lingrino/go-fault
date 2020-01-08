@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -165,13 +166,13 @@ func TestHandlerError(t *testing.T) {
 		{0, testHandlerCode, testHandlerBody},
 		{1, testHandlerCode, testHandlerBody},
 		{73, testHandlerCode, testHandlerBody},
-		{100, 100, ""},
+		{100, 100, http.StatusText(100)},
 		{199, testHandlerCode, testHandlerBody},
-		{200, 200, ""},
+		{200, 200, http.StatusText(200)},
 		{230, testHandlerCode, testHandlerBody},
-		{404, 404, ""},
-		{500, 500, ""},
-		{501, 501, ""},
+		{404, 404, http.StatusText(404)},
+		{500, 500, http.StatusText(500)},
+		{501, 501, http.StatusText(501)},
 		{600, testHandlerCode, testHandlerBody},
 		{120000, testHandlerCode, testHandlerBody},
 	}
@@ -194,7 +195,7 @@ func TestHandlerError(t *testing.T) {
 				t.Errorf("wrong status code. expected: %v got: %v", tc.expectCode, rr.Code)
 			}
 
-			if rr.Body.String() != tc.expectBody {
+			if strings.TrimSpace(rr.Body.String()) != tc.expectBody {
 				t.Errorf("wrong body. expected: %v got: %v", tc.expectBody, rr.Body.String())
 			}
 		})
@@ -310,8 +311,8 @@ func TestHandlerChained(t *testing.T) {
 			t.Errorf("wrong status code. expected: %v got: %v", http.StatusInternalServerError, rr.Code)
 		}
 
-		if rr.Body.String() != "" {
-			t.Errorf("wrong body. expected: %v got: %v", "", rr.Body.String())
+		if strings.TrimSpace(rr.Body.String()) != http.StatusText(500) {
+			t.Errorf("wrong body. expected: %v got: %v", http.StatusText(500), rr.Body.String())
 		}
 
 	})
