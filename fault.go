@@ -40,7 +40,7 @@ type Options struct {
 
 	// The percent of requests that should have the fault injected.
 	// 0.0 <= percent <= 1.0
-	PercentOfRequests float64
+	PercentOfRequests float32
 
 	// Set to true if this fault should only activate when a non-returning (SLOW)
 	// fault higher up the chain has activated. This ignores PercentOfRequests.
@@ -93,7 +93,7 @@ func (f *Fault) percentDo(r *http.Request) bool {
 	}
 
 	// 0.0 <= r < 1.0
-	rn := rand.Float64()
+	rn := rand.Float32()
 	if rn < f.Opt.PercentOfRequests {
 		return true
 	}

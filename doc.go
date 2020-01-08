@@ -4,7 +4,7 @@ Package fault provides standard http middleware for fault injection in go
 Basics
 
 Use the fault package to inject faults into the http request path of your service.
-Fault works by modfying and/or delaying your service's http responses. Place the
+Fault works by modifying and/or delaying your service's http responses. Place the
 middleware high enough in the chain that it can act quickly, but after any other
 middlewares that should complete before fault injection (auth, redirects, etc...)
 
@@ -29,12 +29,14 @@ There are three type of faults that can be injected.
 	fault.Error
 	fault.Slow
 
-The faults can be divided into two types. Those that continue (fault.Slow) and those
-that return (fault.Reject, fault.Error). For faults that continue, a context value of
-fault.FaultInjected will be added to the request and equal to the fault.Type (eg: fault.Slow)
-that ran. This value is used in the package for fault.Opt.Chained requests, but can
-also be used by any middleware further down the chain. If r.Context().Value(FaultInjected)
-is nil ("") then a fault middleware was evaluated but did not iunject.
+The faults can be divided into two types: Those that are still processed by your handler
+after a delay (fault.Slow) and those that immediately return without being handled
+(fault.Reject, fault.Error). For faults that are delayed, a context value of
+fault.FaultInjected will be added to the request and equal to the fault.Type
+(eg: fault.Slow) that ran. This value is used in the package for fault.Opt.Chained
+requests, but can also be used by any middleware further down the chain. If
+r.Context().Value(FaultInjected) is nil ("") then a fault middleware was evaluated
+but did not inject.
 
 Reject
 

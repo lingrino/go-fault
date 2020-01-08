@@ -62,9 +62,9 @@ func TestHelperPercentDo(t *testing.T) {
 	// allowableRange is added/subtracted from percentExpected to get the allowed +/-
 	// deviation from the expected percent. We're allowing a .5% deviation
 	cases := []struct {
-		percentRequests float64
-		percentExpected float64
-		allowableRange  float64
+		percentRequests float32
+		percentExpected float32
+		allowableRange  float32
 	}{
 		{1.1, 0.0, 0},
 		{1.0, 1.0, 0},
@@ -87,7 +87,7 @@ func TestHelperPercentDo(t *testing.T) {
 				PercentOfRequests: tc.percentRequests,
 			})
 
-			var errorC, totalC float64
+			var errorC, totalC float32
 
 			for totalC <= 100000 {
 				rr := sendRequest(t, f)
@@ -114,7 +114,7 @@ func TestHandlerReject(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		percentOfRequests float64
+		percentOfRequests float32
 	}{
 		{0.0},
 		{1.0},
@@ -212,7 +212,7 @@ func TestHandlerSlow(t *testing.T) {
 		sendMs            int
 		expectMs          time.Duration
 		allowableRange    time.Duration
-		percentOfRequests float64
+		percentOfRequests float32
 	}{
 		{-10, 0 * time.Millisecond, 1 * time.Millisecond, 1.0},
 		{0, 0 * time.Millisecond, 1 * time.Millisecond, 0.0},
