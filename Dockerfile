@@ -1,7 +1,7 @@
 ########################
 ### Builder          ###
 ########################
-FROM golang:latest as builder
+FROM golang:1.13 as builder
 
 COPY . /go/src/github.com/github/fault
 WORKDIR /go/src/github.com/github/fault/test
