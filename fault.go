@@ -126,9 +126,9 @@ func (f *Fault) processReject(h http.Handler) http.Handler {
 			// response to the client without printing the panic stack trace or erroring.
 			// https://golang.org/pkg/net/http/#Handler
 			panic(http.ErrAbortHandler)
+		} else {
+			h.ServeHTTP(w, r)
 		}
-
-		h.ServeHTTP(w, r)
 	})
 }
 
