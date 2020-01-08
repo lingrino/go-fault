@@ -159,8 +159,8 @@ func TestHandlerError(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		sendCode   int
-		expectCode int
+		sendCode   uint
+		expectCode uint
 		expectBody string
 	}{
 		{0, testHandlerCode, testHandlerBody},
@@ -191,7 +191,7 @@ func TestHandlerError(t *testing.T) {
 
 			rr := sendRequest(t, f)
 
-			if rr.Code != tc.expectCode {
+			if rr.Code != int(tc.expectCode) {
 				t.Errorf("wrong status code. expected: %v got: %v", tc.expectCode, rr.Code)
 			}
 
@@ -210,12 +210,11 @@ func TestHandlerSlow(t *testing.T) {
 	t.Parallel()
 
 	cases := []struct {
-		sendMs            int
+		sendMs            uint
 		expectMs          time.Duration
 		allowableRange    time.Duration
 		percentOfRequests float32
 	}{
-		{-10, 0 * time.Millisecond, 1 * time.Millisecond, 1.0},
 		{0, 0 * time.Millisecond, 1 * time.Millisecond, 0.0},
 		{0, 0 * time.Millisecond, 1 * time.Millisecond, 1.0},
 		{1, 1 * time.Millisecond, 3 * time.Millisecond, 1.0},

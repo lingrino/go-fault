@@ -36,7 +36,7 @@ type Options struct {
 	// REJECT n/a
 	// ERROR: http error to return
 	// SLOW:  ms to wait
-	Value int
+	Value uint
 
 	// The percent of requests that should have the fault injected.
 	// 0.0 <= percent <= 1.0
@@ -136,12 +136,12 @@ func (f *Fault) processReject(h http.Handler) http.Handler {
 func (f *Fault) processError(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if f.percentDo(r) {
-			statusText := http.StatusText(f.Opt.Value)
+			statusText := http.StatusText(int(f.Opt.Value))
 			// Continue normally if we don't have a valid status code
 			if statusText == "" {
 				h.ServeHTTP(w, r)
 			} else {
-				http.Error(w, statusText, f.Opt.Value)
+				http.Error(w, statusText, int(f.Opt.Value))
 			}
 
 			return
