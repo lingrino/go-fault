@@ -2,6 +2,7 @@ package fault
 
 import (
 	"context"
+	"log"
 	"math/rand"
 	"net/http"
 	"time"
@@ -46,6 +47,13 @@ type Options struct {
 	// fault higher up the chain has activated. This ignores PercentOfRequests.
 	// Use to chain faults like 20% SLOW then REJECT.
 	Chained bool
+
+	// Set to true to log errors and fault occurences. Requests will always
+	// continue without injecting a fault if the fault is misconfigured.
+	Debug bool
+
+	// Provide your own logger. Default to the standard log.Logger
+	Logger *log.Logger
 }
 
 // Fault is middleware that does fault injection on incoming
@@ -72,6 +80,18 @@ func (f *Fault) Handler(h http.Handler) http.Handler {
 	})
 }
 
+// log is a wrapper for logging our debug messages only when debug is enabled
+// and choosing the provided or standard logger.
+func (f *Fault) log(v ...interface{}) {
+	if f.Opt.Debug {
+		if f.Opt.Logger != nil {
+			f.Opt.Logger.Println(v...)
+		} else {
+			log.Println(v...)
+		}
+	}
+}
+
 // percentDo takes a percent (0.0 <= per <= 1.0)
 // and randomly returns true that percent of the time
 func (f *Fault) percentDo(r *http.Request) bool {
@@ -89,6 +109,7 @@ func (f *Fault) percentDo(r *http.Request) bool {
 
 	// bias false if p < 0.0, p > 1.0
 	if f.Opt.PercentOfRequests > 1.0 || f.Opt.PercentOfRequests < 0.0 {
+		f.log("PercentOfRequests must be 0.0 <= per <= 1.0, got:", f.Opt.PercentOfRequests)
 		return false
 	}
 
@@ -112,6 +133,7 @@ func (f *Fault) process(h http.Handler) http.Handler {
 	case Slow:
 		return f.processSlow(h)
 	default:
+		f.log("fault type is not valid. got:", f.Opt.Type)
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h.ServeHTTP(w, r)
 		})
@@ -139,6 +161,7 @@ func (f *Fault) processError(h http.Handler) http.Handler {
 			statusText := http.StatusText(int(f.Opt.Value))
 			// Continue normally if we don't have a valid status code
 			if statusText == "" {
+				f.log(f.Opt.Value, "is not a valid http status code")
 				h.ServeHTTP(w, r)
 			} else {
 				http.Error(w, statusText, int(f.Opt.Value))

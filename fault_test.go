@@ -2,6 +2,8 @@ package fault_test
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -42,6 +44,50 @@ func TestHandlerInvalidType(t *testing.T) {
 	})
 
 	rr := sendRequest(t, f)
+
+	if rr.Code != testHandlerCode {
+		t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
+	}
+
+	if rr.Body.String() != testHandlerBody {
+		t.Errorf("wrong body. expected: %v got: %v", testHandlerBody, rr.Body.String())
+	}
+}
+
+func TestHelperLog(t *testing.T) {
+	t.Parallel()
+
+	// Test with a custom logger
+	f := fault.New(fault.Options{
+		Enabled:           true,
+		Type:              fault.Error,
+		Value:             500,
+		PercentOfRequests: 50,
+		Debug:             true,
+		Logger:            log.New(ioutil.Discard, "PREFIX", log.LstdFlags),
+	})
+
+	rr := sendRequest(t, f)
+
+	if rr.Code != testHandlerCode {
+		t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
+	}
+
+	if rr.Body.String() != testHandlerBody {
+		t.Errorf("wrong body. expected: %v got: %v", testHandlerBody, rr.Body.String())
+	}
+
+	// Test with the standard logger
+	log.SetOutput(ioutil.Discard)
+	f = fault.New(fault.Options{
+		Enabled:           true,
+		Type:              fault.Error,
+		Value:             500,
+		PercentOfRequests: 50,
+		Debug:             true,
+	})
+
+	rr = sendRequest(t, f)
 
 	if rr.Code != testHandlerCode {
 		t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
@@ -142,8 +188,8 @@ func TestHandlerReject(t *testing.T) {
 				t.Errorf("expected: nil request got: %v", rr)
 			}
 
-			if rr != nil && rr.Code != http.StatusOK && tc.percentOfRequests == 0.0 {
-				t.Errorf("wrong status code. expected: %v got: %v", http.StatusOK, rr.Code)
+			if rr != nil && rr.Code != testHandlerCode && tc.percentOfRequests == 0.0 {
+				t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
 			}
 
 			if rr != nil && rr.Body.String() != testHandlerBody && tc.percentOfRequests == 0.0 {
@@ -260,8 +306,8 @@ func TestHandlerSlow(t *testing.T) {
 				t.Errorf("wrong latency duration. expected: %v < duration < %v got: %v", minD, maxD, took)
 			}
 
-			if rr.Code != http.StatusOK {
-				t.Errorf("wrong status code. expected: %v got: %v", http.StatusOK, rr.Code)
+			if rr.Code != testHandlerCode {
+				t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
 			}
 
 			if rr.Body.String() != testHandlerBody {
@@ -345,8 +391,8 @@ func TestHandlerChained(t *testing.T) {
 			t.Errorf("wrong latency duration. expected: duration < %v got: %v", maxD, took)
 		}
 
-		if rr.Code != http.StatusOK {
-			t.Errorf("wrong status code. expected: %v got: %v", http.StatusOK, rr.Code)
+		if rr.Code != testHandlerCode {
+			t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
 		}
 
 		if rr.Body.String() != testHandlerBody {
