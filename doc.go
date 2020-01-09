@@ -19,7 +19,8 @@ to REJECT a request after a 100ms SLOW. See the "Combining Faults" section for m
 Fault will always default to a "do nothing, pass request on" state if the provided
 options are invalid. If you are not seeing faults injected like you expect you may
 have passed an out of bounds value, invalid http status code, incorrect percent, or
-other wrong parameter.
+other wrong parameter. You can turn on fault.Opt.Debug to see these errors in your
+logs, and even provide your own Logger.
 
 Fault Types
 

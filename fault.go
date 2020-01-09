@@ -27,32 +27,34 @@ const (
 // Options is a struct for specifying all configuration
 // to the fault.Fault middleware
 type Options struct {
-	// Set to true to enable the Fault middleware
+	// Enabled determines if the fault middleware should evaluate
 	Enabled bool
 
-	// REJECT, ERROR, SLOW
-	// Use the provided type constants (eg fault.Error) to prevent typos
+	// Type is the type of fault to be injected
+	// Options - Reject, Error, Slow
 	Type Type
 
+	// Value represents how the fault should act. The meaning changes
+	// for different kinds of faults.
 	// REJECT n/a
 	// ERROR: http error to return
 	// SLOW:  ms to wait
 	Value uint
 
-	// The percent of requests that should have the fault injected.
+	// PercentOfRequests is the percent of requests that should have the fault injected.
 	// 0.0 <= percent <= 1.0
 	PercentOfRequests float32
 
-	// Set to true if this fault should only activate when a non-returning (SLOW)
+	// Chained determines if this fault should only activate when a non-returning (SLOW)
 	// fault higher up the chain has activated. This ignores PercentOfRequests.
 	// Use to chain faults like 20% SLOW then REJECT.
 	Chained bool
 
-	// Set to true to log errors and fault occurences. Requests will always
+	// Debug determines if we should log errors and fault occurences. Requests will always
 	// continue without injecting a fault if the fault is misconfigured.
 	Debug bool
 
-	// Provide your own logger. Default to the standard log.Logger
+	// Logger is your custom logger. Defaults to the standard log.Logger
 	Logger *log.Logger
 }
 

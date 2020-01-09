@@ -54,6 +54,8 @@ func TestHandlerInvalidType(t *testing.T) {
 	}
 }
 
+// TestHelperLog tests that we log as expected with both the standard
+// logger and a custom provided logger while in debug mode.
 func TestHelperLog(t *testing.T) {
 	t.Parallel()
 
