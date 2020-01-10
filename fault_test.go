@@ -24,13 +24,8 @@ func TestHandlerDisabled(t *testing.T) {
 
 	rr := sendRequest(t, f)
 
-	if rr.Code != testHandlerCode {
-		t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
-	}
-
-	if rr.Body.String() != testHandlerBody {
-		t.Errorf("wrong body. expected: %v got: %v", testHandlerBody, rr.Body.String())
-	}
+	assertEqual(t, testHandlerCode, rr.Code, "wrong status code")
+	assertEqual(t, testHandlerBody, rr.Body.String(), "wrong body")
 }
 
 // TestHandlerInvalidType tests that the request proceeds normally when
@@ -45,13 +40,8 @@ func TestHandlerInvalidType(t *testing.T) {
 
 	rr := sendRequest(t, f)
 
-	if rr.Code != testHandlerCode {
-		t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
-	}
-
-	if rr.Body.String() != testHandlerBody {
-		t.Errorf("wrong body. expected: %v got: %v", testHandlerBody, rr.Body.String())
-	}
+	assertEqual(t, testHandlerCode, rr.Code, "wrong status code")
+	assertEqual(t, testHandlerBody, rr.Body.String(), "wrong body")
 }
 
 // TestHelperLog tests that we log as expected with both the standard
@@ -71,13 +61,8 @@ func TestHelperLog(t *testing.T) {
 
 	rr := sendRequest(t, f)
 
-	if rr.Code != testHandlerCode {
-		t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
-	}
-
-	if rr.Body.String() != testHandlerBody {
-		t.Errorf("wrong body. expected: %v got: %v", testHandlerBody, rr.Body.String())
-	}
+	assertEqual(t, testHandlerCode, rr.Code, "wrong status code")
+	assertEqual(t, testHandlerBody, rr.Body.String(), "wrong body")
 
 	// Test with the standard logger
 	log.SetOutput(ioutil.Discard)
@@ -91,13 +76,8 @@ func TestHelperLog(t *testing.T) {
 
 	rr = sendRequest(t, f)
 
-	if rr.Code != testHandlerCode {
-		t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
-	}
-
-	if rr.Body.String() != testHandlerBody {
-		t.Errorf("wrong body. expected: %v got: %v", testHandlerBody, rr.Body.String())
-	}
+	assertEqual(t, testHandlerCode, rr.Code, "wrong status code")
+	assertEqual(t, testHandlerBody, rr.Body.String(), "wrong body")
 }
 
 // TestHandlerPercentDo indirectly tests the percentDo helper function by running an ERROR fault
@@ -239,13 +219,8 @@ func TestHandlerError(t *testing.T) {
 
 			rr := sendRequest(t, f)
 
-			if rr.Code != int(tc.expectCode) {
-				t.Errorf("wrong status code. expected: %v got: %v", tc.expectCode, rr.Code)
-			}
-
-			if strings.TrimSpace(rr.Body.String()) != tc.expectBody {
-				t.Errorf("wrong body. expected: %v got: %v", tc.expectBody, rr.Body.String())
-			}
+			assertEqual(t, int(tc.expectCode), rr.Code, "wrong status code")
+			assertEqual(t, tc.expectBody, strings.TrimSpace(rr.Body.String()), "wrong body")
 		})
 	}
 }
@@ -304,17 +279,9 @@ func TestHandlerSlow(t *testing.T) {
 			minD := time.Duration(tc.expectMs)
 			maxD := time.Duration(tc.expectMs) + tc.allowableRange + benchD
 
-			if took < minD || took > maxD {
-				t.Errorf("wrong latency duration. expected: %v < duration < %v got: %v", minD, maxD, took)
-			}
-
-			if rr.Code != testHandlerCode {
-				t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
-			}
-
-			if rr.Body.String() != testHandlerBody {
-				t.Errorf("wrong body. expected: %v got: %v", testHandlerBody, rr.Body.String())
-			}
+			assertTimeWithin(t, minD, took, maxD, "wrong latency duration")
+			assertEqual(t, testHandlerCode, rr.Code, "wrong status code")
+			assertEqual(t, testHandlerBody, rr.Body.String(), "wrong body")
 		})
 	}
 }
@@ -350,18 +317,9 @@ func TestHandlerChained(t *testing.T) {
 		minD := time.Duration(10 * time.Millisecond)
 		maxD := time.Duration(13 * time.Millisecond)
 
-		if took < minD || took > maxD {
-			t.Errorf("wrong latency duration. expected: %v < duration < %v got: %v", minD, maxD, took)
-		}
-
-		if rr.Code != http.StatusInternalServerError {
-			t.Errorf("wrong status code. expected: %v got: %v", http.StatusInternalServerError, rr.Code)
-		}
-
-		if strings.TrimSpace(rr.Body.String()) != http.StatusText(500) {
-			t.Errorf("wrong body. expected: %v got: %v", http.StatusText(500), rr.Body.String())
-		}
-
+		assertTimeWithin(t, minD, took, maxD, "wrong latency duration")
+		assertEqual(t, http.StatusInternalServerError, rr.Code, "wrong status code")
+		assertEqual(t, http.StatusText(500), strings.TrimSpace(rr.Body.String()), "wrong body")
 	})
 
 	// Next test that the chained fault NEVER runs when the first fault is not injected
@@ -387,19 +345,11 @@ func TestHandlerChained(t *testing.T) {
 		rr := sendRequest(t, f2, f1)
 		took := time.Since(t0)
 
+		minD := time.Duration(0 * time.Millisecond)
 		maxD := time.Duration(3 * time.Millisecond)
 
-		if took > maxD {
-			t.Errorf("wrong latency duration. expected: duration < %v got: %v", maxD, took)
-		}
-
-		if rr.Code != testHandlerCode {
-			t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
-		}
-
-		if rr.Body.String() != testHandlerBody {
-			t.Errorf("wrong body. expected: %v got: %v", testHandlerBody, rr.Body.String())
-		}
-
+		assertTimeWithin(t, minD, took, maxD, "wrong latency duration")
+		assertEqual(t, testHandlerCode, rr.Code, "wrong status code")
+		assertEqual(t, testHandlerBody, rr.Body.String(), "wrong body")
 	})
 }

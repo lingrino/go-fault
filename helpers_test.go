@@ -2,6 +2,7 @@ package fault_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,6 +16,30 @@ const (
 	testHandlerContentType = "application/json"
 	testHandlerBody        = `{"status": "OK"}`
 )
+
+// assertEqual asserts that two objects are equal. Does not support certain objects
+// that are not used in this project's tests
+func assertEqual(t *testing.T, expected, actual interface{}, msg ...interface{}) {
+	t.Helper()
+
+	if expected != actual {
+		t.Errorf(fmt.Sprintf("Not Equal: \n"+
+			"expected: %v\n"+
+			"actual  : %v\n"+
+			"message : %s", expected, actual, fmt.Sprint(msg...)))
+	}
+}
+
+// assertTimeWithin assets that a time.Duration is within two other time.Duration
+func assertTimeWithin(t *testing.T, lower, actual, upper time.Duration, msg ...interface{}) {
+	t.Helper()
+
+	if actual < lower || actual > upper {
+		t.Errorf(fmt.Sprintf("Not Within: \n"+
+			"expected: %v < %v < %v \n"+
+			"message : %s", lower, actual, upper, fmt.Sprint(msg...)))
+	}
+}
 
 // testHandler simulates a good request. When no faults are enabled we should
 // expect this result back immediately.
