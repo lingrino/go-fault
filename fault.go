@@ -8,11 +8,11 @@ import (
 )
 
 var (
-	// ErrNilInjector returns when a nil Injector type is passed
+	// ErrNilInjector returns when a nil Injector type is passed.
 	ErrNilInjector = errors.New("injector cannot be nil")
-	// ErrInvalidPercent returns when a provided percent is outside of the allowed bounds
+	// ErrInvalidPercent returns when a provided percent is outside of the allowed bounds.
 	ErrInvalidPercent = errors.New("percent must be 0.0 <= percent <= 1.0")
-	// ErrInvalidHTTPCode returns when an invalid http status code is provided
+	// ErrInvalidHTTPCode returns when an invalid http status code is provided.
 	ErrInvalidHTTPCode = errors.New("not a valid http status code")
 )
 
@@ -21,20 +21,20 @@ type Fault struct {
 	opt Options
 }
 
-// Options holds configuration for a Fault
+// Options holds configuration for a Fault.
 type Options struct {
-	// Enabled determines if the fault middleware should evaluate
+	// Enabled determines if the fault middleware should evaluate.
 	Enabled bool
 
-	// Injector is the interface that returns the handler we will inject
+	// Injector is the interface that returns the handler we will inject.
 	Injector Injector
 
-	// PercentOfRequests is the percent of requests that should have the fault injected. 0.0 <=
-	// percent <= 1.0
+	// PercentOfRequests is the percent of requests that should have the fault injected.
+	// 0.0 <= percent <= 1.0
 	PercentOfRequests float32
 }
 
-// NewFault validates the provided options and returns a Fault struct
+// NewFault validates the provided options and returns a Fault struct.
 func NewFault(o Options) (*Fault, error) {
 	var err error
 
@@ -49,7 +49,7 @@ func NewFault(o Options) (*Fault, error) {
 	return &Fault{opt: o}, err
 }
 
-// Handler returns the main fault handler, which runs Injector.Handler a percent of the time
+// Handler returns the main fault handler, which runs Injector.Handler a percent of the time.
 func (f *Fault) Handler(next http.Handler) http.Handler {
 	if f != nil {
 		if f.opt.Enabled {
@@ -65,7 +65,7 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 }
 
 // percentDo takes a percent (0.0 <= per <= 1.0) and randomly returns true that percent of the time.
-// Numbers provided outside of [0.0,1.0] will always return false
+// Numbers provided outside of [0.0,1.0] will always return false.
 func (f *Fault) percentDo() bool {
 	var proceed bool
 
@@ -78,7 +78,7 @@ func (f *Fault) percentDo() bool {
 }
 
 // Injector is an interface for our fault injection middleware. Injectors are wrapped into Faults.
-// Faults handle running the Injector the correct percent of the time
+// Faults handle running the Injector the correct percent of the time.
 type Injector interface {
 	Handler(next http.Handler) http.Handler
 }
@@ -101,29 +101,28 @@ func NewChainInjector(is ...Injector) (*ChainInjector, error) {
 }
 
 // ChainInjector combines many injectors into a single chain injector. In a chain injector the
-// Handler func will execute ChainInjector.middlewares in order and then returns
+// Handler func will execute ChainInjector.middlewares in order and then returns.
 type ChainInjector struct {
 	middlewares []func(next http.Handler) http.Handler
 }
 
-// Handler executes ChainInjector.middlewares in order and then returns
+// Handler executes ChainInjector.middlewares in order and then returns.
 func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		chain := next
 		if i != nil {
 			// Loop in reverse to preserve handler order
 			for idx := len(i.middlewares) - 1; idx >= 0; idx-- {
-				chain = i.middlewares[idx](chain)
+				next = i.middlewares[idx](next)
 			}
 		}
-		chain.ServeHTTP(w, r)
+		next.ServeHTTP(w, r)
 	})
 }
 
-// RejectInjector immediately sends back an empty response
+// RejectInjector immediately sends back an empty response.
 type RejectInjector struct{}
 
-// NewRejectInjector returns a RejectInjector struct
+// NewRejectInjector returns a RejectInjector struct.
 func NewRejectInjector() (*RejectInjector, error) {
 	var err error
 
@@ -141,13 +140,13 @@ func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 }
 
 // ErrorInjector immediately responds with an http status code and the error message associated with
-// that code
+// that code.
 type ErrorInjector struct {
 	statusCode int
 	statusText string
 }
 
-// NewErrorInjector returns an ErrorInjector that reponds with the configured status code
+// NewErrorInjector returns an ErrorInjector that reponds with the configured status code.
 func NewErrorInjector(code int) (*ErrorInjector, error) {
 	var err error
 
@@ -182,7 +181,7 @@ type SlowInjector struct {
 	sleep    func(t time.Duration)
 }
 
-// NewSlowInjector returns a SlowInjector that adds the configured latency
+// NewSlowInjector returns a SlowInjector that adds the configured latency.
 func NewSlowInjector(d time.Duration) (*SlowInjector, error) {
 	var err error
 
@@ -192,7 +191,7 @@ func NewSlowInjector(d time.Duration) (*SlowInjector, error) {
 	}, err
 }
 
-// Handler waits the configured duration and then continues the request
+// Handler waits the configured duration and then continues the request.
 func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {

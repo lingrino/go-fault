@@ -8,20 +8,19 @@ import (
 	"github.com/github/go-fault"
 )
 
+// result should be set to avoid compiler optimizations.
 var result *httptest.ResponseRecorder
 
-const (
-	benchmarkHandlerCode = http.StatusOK
-	benchmarkHandlerBody = "OK"
-)
-
+// benchmarkHandler is the main handler that runs on our request.
 var benchmarkHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, benchmarkHandlerBody, benchmarkHandlerCode)
+	http.Error(w, "OK", http.StatusOK)
 })
 
-func sendRequestBenchmark(b *testing.B, f *fault.Fault) *httptest.ResponseRecorder {
+// benchmarkRequest simulates a request with the provided Fault injected.
+func benchmarkRequest(b *testing.B, f *fault.Fault) *httptest.ResponseRecorder {
 	b.Helper()
 
+	// If we instead use httptest.NewRequest here our benchmark times will approximately double.
 	req, _ := http.NewRequest("GET", "/", nil)
 	rr := httptest.NewRecorder()
 
@@ -35,20 +34,23 @@ func sendRequestBenchmark(b *testing.B, f *fault.Fault) *httptest.ResponseRecord
 	return rr
 }
 
+// runBenchmark runs the benchmark look with the provided Fault.
 func runBenchmark(b *testing.B, f *fault.Fault) {
 	var rr *httptest.ResponseRecorder
 
 	for n := 0; n < b.N; n++ {
-		rr = sendRequestBenchmark(b, f)
+		rr = benchmarkRequest(b, f)
 	}
 
 	result = rr
 }
 
+// BenchmarkNoFault is our control with no Fault injected.
 func BenchmarkNoFault(b *testing.B) {
 	runBenchmark(b, nil)
 }
 
+// BenchmarkFaultDisabled benchmarks a disabled Fault struct.
 func BenchmarkFaultDisabled(b *testing.B) {
 	i, _ := fault.NewErrorInjector(500)
 
@@ -61,6 +63,7 @@ func BenchmarkFaultDisabled(b *testing.B) {
 	runBenchmark(b, f)
 }
 
+// BenchmarkFaultErrorZeroPercent benchmarks an enabled fault struct that runs 0% of the time.
 func BenchmarkFaultErrorZeroPercent(b *testing.B) {
 	i, _ := fault.NewErrorInjector(500)
 
@@ -73,6 +76,7 @@ func BenchmarkFaultErrorZeroPercent(b *testing.B) {
 	runBenchmark(b, f)
 }
 
+// BenchmarkFaultError100Percent benchmarks an enabled fault struct that runs 100% of the time.
 func BenchmarkFaultError100Percent(b *testing.B) {
 	i, _ := fault.NewErrorInjector(500)
 

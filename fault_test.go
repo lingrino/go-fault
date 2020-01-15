@@ -10,6 +10,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// NOTE - Even though the New() constructors should prevent nil Faults/Injectors/etc...
+//        we still want to test how the Faults and Injectors behave with unwanted input
+//        and we expect that they handle it gracefully.
+
+// TestNewFault tests NewFault.
 func TestNewFault(t *testing.T) {
 	t.Parallel()
 
@@ -70,6 +75,7 @@ func TestNewFault(t *testing.T) {
 	}
 }
 
+// TestFaultHandler tests Fault.Handler.
 func TestFaultHandler(t *testing.T) {
 	t.Parallel()
 
@@ -162,6 +168,7 @@ func TestFaultHandler(t *testing.T) {
 	}
 }
 
+// TestFaultPercentDo tests the internal Fault.percentDo.
 func TestFaultPercentDo(t *testing.T) {
 	t.Parallel()
 
@@ -211,6 +218,7 @@ func TestFaultPercentDo(t *testing.T) {
 	}
 }
 
+// TestNewChainInjector tests NewChainInjector.
 func TestNewChainInjector(t *testing.T) {
 	t.Parallel()
 
@@ -282,6 +290,7 @@ func TestNewChainInjector(t *testing.T) {
 	}
 }
 
+// TestChainInjectorHandler tests ChainInjector.Handler.
 func TestChainInjectorHandler(t *testing.T) {
 	t.Parallel()
 
@@ -436,12 +445,14 @@ func TestChainInjectorHandler(t *testing.T) {
 			}
 
 			rr := testRequest(t, f)
+
 			assert.Equal(t, tt.wantCode, rr.Code)
 			assert.Equal(t, tt.wantBody, strings.TrimSpace(rr.Body.String()))
 		})
 	}
 }
 
+// TestNewRejectInjector tests NewRejectInjector.
 func TestNewRejectInjector(t *testing.T) {
 	t.Parallel()
 
@@ -470,6 +481,7 @@ func TestNewRejectInjector(t *testing.T) {
 	}
 }
 
+// TestRejectInjectorHandler tests RejectInjector.Handler.
 func TestRejectInjectorHandler(t *testing.T) {
 	t.Parallel()
 
@@ -501,11 +513,13 @@ func TestRejectInjectorHandler(t *testing.T) {
 			}
 
 			rr := testRequestExpectPanic(t, f)
+
 			assert.Nil(t, rr)
 		})
 	}
 }
 
+// TestNewErrorInjector tests NewErrorInjector.
 func TestNewErrorInjector(t *testing.T) {
 	t.Parallel()
 
@@ -560,6 +574,8 @@ func TestNewErrorInjector(t *testing.T) {
 		})
 	}
 }
+
+// TestErrorInjectorHandler tests ErrorInjector.Handler.
 func TestErrorInjectorHandler(t *testing.T) {
 	t.Parallel()
 
@@ -633,12 +649,14 @@ func TestErrorInjectorHandler(t *testing.T) {
 			}
 
 			rr := testRequest(t, f)
+
 			assert.Equal(t, tt.wantCode, rr.Code)
 			assert.Equal(t, tt.wantBody, strings.TrimSpace(rr.Body.String()))
 		})
 	}
 }
 
+// TestNewSlowInjector tests NewSlowInjector.
 func TestNewSlowInjector(t *testing.T) {
 	t.Parallel()
 
@@ -694,6 +712,7 @@ func TestNewSlowInjector(t *testing.T) {
 	}
 }
 
+// TestSlowInjectorHandler tests SlowInjector.Handler.
 func TestSlowInjectorHandler(t *testing.T) {
 	t.Parallel()
 
@@ -740,6 +759,7 @@ func TestSlowInjectorHandler(t *testing.T) {
 			}
 
 			rr := testRequest(t, f)
+
 			assert.Equal(t, tt.wantCode, rr.Code)
 			assert.Equal(t, tt.wantBody, strings.TrimSpace(rr.Body.String()))
 		})

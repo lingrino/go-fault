@@ -1,5 +1,5 @@
 /*
-Package fault provides standard http middleware for fault injection in go
+Package fault provides standard http middleware for fault injection in go.
 
 Basics
 
@@ -22,7 +22,7 @@ parameter.
 
 Injectors
 
-There are three main Injectors provided by the fault package
+There are three main Injectors provided by the fault package:
 
     fault.RejectInjector
     fault.ErrorInjector

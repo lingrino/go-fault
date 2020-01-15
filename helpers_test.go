@@ -7,33 +7,37 @@ import (
 )
 
 const (
-	// Don't use http.StatusOK because some operations default to that and then we can't tell
-	// the difference between what testHandler wrote and what the operation wrote
+	// We don't use http.StatusOK because some operations default to that and then we can't tell
+	// the difference between what testHandler wrote and what the operation wrote.
 	testHandlerCode = http.StatusAccepted
 	testHandlerBody = "Accepted"
 )
 
+// testHandler is the main handler that runs on our request.
 var testHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 	http.Error(w, testHandlerBody, testHandlerCode)
 })
 
-func testRequest(t *testing.T, fs ...*Fault) *httptest.ResponseRecorder {
+// testRequest simulates a request with the provided Fault injected.
+func testRequest(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 	t.Helper()
 
 	req := httptest.NewRequest("GET", "/", nil)
 	rr := httptest.NewRecorder()
 
-	finalHandler := fs[0].Handler(testHandler)
-	for _, f := range fs[1:] {
-		finalHandler = f.Handler(finalHandler)
+	if f != nil {
+		finalHandler := f.Handler(testHandler)
+		finalHandler.ServeHTTP(rr, req)
+	} else {
+		testHandler.ServeHTTP(rr, req)
 	}
-
-	finalHandler.ServeHTTP(rr, req)
 
 	return rr
 }
 
-func testRequestExpectPanic(t *testing.T, fs ...*Fault) *httptest.ResponseRecorder {
+// testRequestExpectPanic runs testRequest and catches panics, failing the test if the panic is not
+// http.ErrAbortHandler.
+func testRequestExpectPanic(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 	t.Helper()
 
 	defer func() {
@@ -44,21 +48,25 @@ func testRequestExpectPanic(t *testing.T, fs ...*Fault) *httptest.ResponseRecord
 		}
 	}()
 
-	rr := testRequest(t, fs...)
+	rr := testRequest(t, f)
 
 	return rr
 }
 
+// testInjector is a simple Injector used for running tests. By default testInjector just passes on
+// the request but if you set resp500 to true then it will instead return a 500.
 type testInjector struct {
 	resp500 bool
 }
 
+// newTestInjector creates a new testInjector struct.
 func newTestInjector(resp500 bool) *testInjector {
 	return &testInjector{
 		resp500: resp500,
 	}
 }
 
+// Handler returns a 500 if resp500 is true and otherwise passes on the request.
 func (i *testInjector) Handler(next http.Handler) http.Handler {
 	if i.resp500 {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
