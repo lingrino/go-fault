@@ -7,9 +7,8 @@ import (
 )
 
 const (
-	// Don't use http.StatusOK because some operations default to that and
-	// then we can't tell the difference between what testHandler wrote
-	// and what the operation wrote
+	// Don't use http.StatusOK because some operations default to that and then we can't tell
+	// the difference between what testHandler wrote and what the operation wrote
 	testHandlerCode = http.StatusAccepted
 	testHandlerBody = "Accepted"
 )

@@ -211,7 +211,7 @@ func TestFaultPercentDo(t *testing.T) {
 	}
 }
 
-func TestNewChainedInjector(t *testing.T) {
+func TestNewChainInjector(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -270,7 +270,7 @@ func TestNewChainedInjector(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			i, err := NewChainedInjector(tt.give...)
+			i, err := NewChainInjector(tt.give...)
 
 			assert.Equal(t, tt.wantErr, err)
 			if tt.wantNil {
@@ -282,12 +282,12 @@ func TestNewChainedInjector(t *testing.T) {
 	}
 }
 
-func TestChainedInjectorHandler(t *testing.T) {
+func TestChainInjectorHandler(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
 		name     string
-		give     *ChainedInjector
+		give     *ChainInjector
 		wantCode int
 		wantBody string
 	}{
@@ -299,13 +299,13 @@ func TestChainedInjectorHandler(t *testing.T) {
 		},
 		{
 			name:     "empty",
-			give:     &ChainedInjector{},
+			give:     &ChainInjector{},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
 		},
 		{
 			name: "nil middlewares",
-			give: &ChainedInjector{
+			give: &ChainInjector{
 				middlewares: nil,
 			},
 			wantCode: testHandlerCode,
@@ -313,7 +313,7 @@ func TestChainedInjectorHandler(t *testing.T) {
 		},
 		{
 			name: "empty middlewares",
-			give: &ChainedInjector{
+			give: &ChainInjector{
 				middlewares: []func(next http.Handler) http.Handler{},
 			},
 			wantCode: testHandlerCode,
@@ -321,7 +321,7 @@ func TestChainedInjectorHandler(t *testing.T) {
 		},
 		{
 			name: "one continue",
-			give: &ChainedInjector{
+			give: &ChainInjector{
 				middlewares: []func(next http.Handler) http.Handler{
 					func(next http.Handler) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -337,7 +337,7 @@ func TestChainedInjectorHandler(t *testing.T) {
 		},
 		{
 			name: "one halt",
-			give: &ChainedInjector{
+			give: &ChainInjector{
 				middlewares: []func(next http.Handler) http.Handler{
 					func(next http.Handler) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -353,7 +353,7 @@ func TestChainedInjectorHandler(t *testing.T) {
 		},
 		{
 			name: "two continue",
-			give: &ChainedInjector{
+			give: &ChainInjector{
 				middlewares: []func(next http.Handler) http.Handler{
 					func(next http.Handler) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -376,7 +376,7 @@ func TestChainedInjectorHandler(t *testing.T) {
 		},
 		{
 			name: "two halting",
-			give: &ChainedInjector{
+			give: &ChainInjector{
 				middlewares: []func(next http.Handler) http.Handler{
 					func(next http.Handler) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -399,7 +399,7 @@ func TestChainedInjectorHandler(t *testing.T) {
 		},
 		{
 			name: "continue then halt",
-			give: &ChainedInjector{
+			give: &ChainInjector{
 				middlewares: []func(next http.Handler) http.Handler{
 					func(next http.Handler) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

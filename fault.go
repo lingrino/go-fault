@@ -29,8 +29,8 @@ type Options struct {
 	// Injector is the interface that returns the handler we will inject
 	Injector Injector
 
-	// PercentOfRequests is the percent of requests that should have the fault injected.
-	// 0.0 <= percent <= 1.0
+	// PercentOfRequests is the percent of requests that should have the fault injected. 0.0 <=
+	// percent <= 1.0
 	PercentOfRequests float32
 }
 
@@ -77,38 +77,37 @@ func (f *Fault) percentDo() bool {
 	return proceed
 }
 
-// Injector is an interface for our fault injection middleware. Injectors
-// are wrapped into Faults. Faults handle running the Injector the correct
-// percent of the time
+// Injector is an interface for our fault injection middleware. Injectors are wrapped into Faults.
+// Faults handle running the Injector the correct percent of the time
 type Injector interface {
 	Handler(next http.Handler) http.Handler
 }
 
-// NewChainedInjector combines many injectors into a single chained injector. In a chained
-// injector the Handler() for each injector will execute in the order provided.
-func NewChainedInjector(is ...Injector) (*ChainedInjector, error) {
+// NewChainInjector combines many injectors into a single chain injector. In a chain injector
+// the Handler() for each injector will execute in the order provided.
+func NewChainInjector(is ...Injector) (*ChainInjector, error) {
 	var err error
 
 	if is == nil {
 		return nil, ErrNilInjector
 	}
 
-	chainedInjector := &ChainedInjector{}
+	chainInjector := &ChainInjector{}
 	for _, i := range is {
-		chainedInjector.middlewares = append(chainedInjector.middlewares, i.Handler)
+		chainInjector.middlewares = append(chainInjector.middlewares, i.Handler)
 	}
 
-	return chainedInjector, err
+	return chainInjector, err
 }
 
-// ChainedInjector combines many injectors into a single chained injector. In a chained
-// injector the Handler func will execute ChainedInjector.middlewares in order and then returns
-type ChainedInjector struct {
+// ChainInjector combines many injectors into a single chain injector. In a chain injector the
+// Handler func will execute ChainInjector.middlewares in order and then returns
+type ChainInjector struct {
 	middlewares []func(next http.Handler) http.Handler
 }
 
-// Handler executes ChainedInjector.middlewares in order and then returns
-func (i *ChainedInjector) Handler(next http.Handler) http.Handler {
+// Handler executes ChainInjector.middlewares in order and then returns
+func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		chain := next
 		if i != nil {
@@ -134,15 +133,15 @@ func NewRejectInjector() (*RejectInjector, error) {
 // Handler immediately rejects the request, returning an empty response.
 func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// This is a specialized and documented way of sending an interrupted
-		// response to the client without printing the panic stack trace or erroring.
+		// This is a specialized and documented way of sending an interrupted response to
+		// the client without printing the panic stack trace or erroring.
 		// https://golang.org/pkg/net/http/#Handler
 		panic(http.ErrAbortHandler)
 	})
 }
 
-// ErrorInjector immediately responds with an http status code and
-// the error message associated with that code
+// ErrorInjector immediately responds with an http status code and the error message associated with
+// that code
 type ErrorInjector struct {
 	statusCode int
 	statusText string
@@ -163,8 +162,8 @@ func NewErrorInjector(code int) (*ErrorInjector, error) {
 	}, err
 }
 
-// Handler immediately responds with the configured HTTP status code and
-// default status text for that code.
+// Handler immediately responds with the configured HTTP status code and default status text for
+// that code.
 func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
