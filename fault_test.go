@@ -17,7 +17,7 @@ func TestNewFault(t *testing.T) {
 		name      string
 		give      Options
 		wantFault *Fault
-		wantErr   bool
+		wantErr   error
 	}{
 		{
 			name: "valid",
@@ -35,7 +35,7 @@ func TestNewFault(t *testing.T) {
 					PercentOfRequests: 1.0,
 				},
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			name: "invalid injector",
@@ -44,7 +44,7 @@ func TestNewFault(t *testing.T) {
 				PercentOfRequests: 1.0,
 			},
 			wantFault: nil,
-			wantErr:   true,
+			wantErr:   ErrNilInjector,
 		},
 		{
 			name: "invalid percent",
@@ -53,7 +53,7 @@ func TestNewFault(t *testing.T) {
 				PercentOfRequests: 1.1,
 			},
 			wantFault: nil,
-			wantErr:   true,
+			wantErr:   ErrInvalidPercent,
 		},
 	}
 
@@ -63,12 +63,8 @@ func TestNewFault(t *testing.T) {
 			t.Parallel()
 
 			f, err := NewFault(tt.give)
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
 
+			assert.Equal(t, tt.wantErr, err)
 			assert.Equal(t, tt.wantFault, f)
 		})
 	}
@@ -83,6 +79,18 @@ func TestFaultHandler(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
+		{
+			name:     "nil",
+			give:     nil,
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name:     "empty",
+			give:     &Fault{},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
 		{
 			name: "not enabled",
 			give: &Fault{
@@ -110,6 +118,20 @@ func TestFaultHandler(t *testing.T) {
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
+		},
+		{
+			name: "100 percent 500s",
+			give: &Fault{
+				opt: Options{
+					Enabled: true,
+					Injector: &testInjector{
+						resp500: true,
+					},
+					PercentOfRequests: 1.0,
+				},
+			},
+			wantCode: http.StatusInternalServerError,
+			wantBody: http.StatusText(http.StatusInternalServerError),
 		},
 		{
 			name: "100 percent",
@@ -145,13 +167,18 @@ func TestFaultPercentDo(t *testing.T) {
 
 	tests := []struct {
 		givePercent float32
+		wantPercent float32
 		wantRange   float32
 	}{
-		{1.0, 0},
-		{0.75, 0.005},
-		{0.3298, 0.005},
-		{0.0001, 0.005},
-		{0.0, 0.0},
+		{-1.0, 0.0, 0.0},
+		{},
+		{0.0, 0.0, 0.0},
+		{0.0001, 0.0001, 0.005},
+		{0.3298, 0.3298, 0.005},
+		{0.75, 0.75, 0.005},
+		{1.0, 1.0, 0.0},
+		{1.1, 0.0, 0.0},
+		{10000.1, 0.0, 0.0},
 	}
 
 	for _, tt := range tests {
@@ -174,13 +201,243 @@ func TestFaultPercentDo(t *testing.T) {
 				totalC++
 			}
 
-			minP := tt.givePercent - tt.wantRange
+			minP := tt.wantPercent - tt.wantRange
 			per := errorC / totalC
-			maxP := tt.givePercent + tt.wantRange
+			maxP := tt.wantPercent + tt.wantRange
 
-			if per < minP || per > maxP {
-				t.Errorf("wrong distribution. expected: %v < per < %v, got: %v", minP, maxP, per)
+			assert.GreaterOrEqual(t, per, minP)
+			assert.LessOrEqual(t, per, maxP)
+		})
+	}
+}
+
+func TestNewChainedInjector(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		give    []Injector
+		wantLen int
+		wantNil bool
+		wantErr error
+	}{
+		{
+			name:    "nil",
+			give:    nil,
+			wantLen: 0,
+			wantNil: true,
+			wantErr: ErrNilInjector,
+		},
+		{
+			name:    "empty",
+			give:    []Injector{},
+			wantLen: 0,
+			wantNil: false,
+			wantErr: nil,
+		},
+		{
+			name: "one",
+			give: []Injector{
+				&SlowInjector{
+					duration: time.Millisecond,
+					sleep:    time.Sleep,
+				},
+			},
+			wantLen: 1,
+			wantNil: false,
+			wantErr: nil,
+		},
+		{
+			name: "two",
+			give: []Injector{
+				&SlowInjector{
+					duration: time.Millisecond,
+					sleep:    time.Sleep,
+				},
+				&ErrorInjector{
+					statusCode: http.StatusInternalServerError,
+					statusText: http.StatusText(http.StatusInternalServerError),
+				},
+			},
+			wantLen: 2,
+			wantNil: false,
+			wantErr: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			i, err := NewChainedInjector(tt.give...)
+
+			assert.Equal(t, tt.wantErr, err)
+			if tt.wantNil {
+				assert.Nil(t, i)
+			} else {
+				assert.Equal(t, tt.wantLen, len(i.middlewares))
 			}
+		})
+	}
+}
+
+func TestChainedInjectorHandler(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		give     *ChainedInjector
+		wantCode int
+		wantBody string
+	}{
+		{
+			name:     "nil",
+			give:     nil,
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name:     "empty",
+			give:     &ChainedInjector{},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "nil middlewares",
+			give: &ChainedInjector{
+				middlewares: nil,
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "empty middlewares",
+			give: &ChainedInjector{
+				middlewares: []func(next http.Handler) http.Handler{},
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "one continue",
+			give: &ChainedInjector{
+				middlewares: []func(next http.Handler) http.Handler{
+					func(next http.Handler) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							w.WriteHeader(http.StatusOK)
+							fmt.Fprint(w, "one")
+							next.ServeHTTP(w, r)
+						})
+					},
+				},
+			},
+			wantCode: http.StatusOK,
+			wantBody: "one" + testHandlerBody,
+		},
+		{
+			name: "one halt",
+			give: &ChainedInjector{
+				middlewares: []func(next http.Handler) http.Handler{
+					func(next http.Handler) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							w.WriteHeader(http.StatusNoContent)
+							fmt.Fprint(w, "one")
+							return
+						})
+					},
+				},
+			},
+			wantCode: http.StatusNoContent,
+			wantBody: "one",
+		},
+		{
+			name: "two continue",
+			give: &ChainedInjector{
+				middlewares: []func(next http.Handler) http.Handler{
+					func(next http.Handler) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							w.WriteHeader(http.StatusOK)
+							fmt.Fprint(w, "one")
+							next.ServeHTTP(w, r)
+						})
+					},
+					func(next http.Handler) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							w.WriteHeader(http.StatusOK)
+							fmt.Fprint(w, "two")
+							next.ServeHTTP(w, r)
+						})
+					},
+				},
+			},
+			wantCode: http.StatusOK,
+			wantBody: "onetwo" + testHandlerBody,
+		},
+		{
+			name: "two halting",
+			give: &ChainedInjector{
+				middlewares: []func(next http.Handler) http.Handler{
+					func(next http.Handler) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							w.WriteHeader(http.StatusOK)
+							fmt.Fprint(w, "one")
+							return
+						})
+					},
+					func(next http.Handler) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							w.WriteHeader(http.StatusOK)
+							fmt.Fprint(w, "two")
+							return
+						})
+					},
+				},
+			},
+			wantCode: http.StatusOK,
+			wantBody: "one",
+		},
+		{
+			name: "continue then halt",
+			give: &ChainedInjector{
+				middlewares: []func(next http.Handler) http.Handler{
+					func(next http.Handler) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							w.WriteHeader(http.StatusTeapot)
+							fmt.Fprint(w, "one")
+							next.ServeHTTP(w, r)
+						})
+					},
+					func(next http.Handler) http.Handler {
+						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+							w.WriteHeader(http.StatusOK)
+							fmt.Fprint(w, "two")
+							return
+						})
+					},
+				},
+			},
+			wantCode: http.StatusTeapot,
+			wantBody: "onetwo",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f := &Fault{
+				opt: Options{
+					Enabled:           true,
+					Injector:          tt.give,
+					PercentOfRequests: 1.0,
+				},
+			}
+
+			rr := testRequest(t, f)
+			assert.Equal(t, tt.wantCode, rr.Code)
+			assert.Equal(t, tt.wantBody, strings.TrimSpace(rr.Body.String()))
 		})
 	}
 }
@@ -191,12 +448,12 @@ func TestNewRejectInjector(t *testing.T) {
 	tests := []struct {
 		name    string
 		want    *RejectInjector
-		wantErr bool
+		wantErr error
 	}{
 		{
 			name:    "valid",
 			want:    &RejectInjector{},
-			wantErr: false,
+			wantErr: nil,
 		},
 	}
 
@@ -206,12 +463,8 @@ func TestNewRejectInjector(t *testing.T) {
 			t.Parallel()
 
 			i, err := NewRejectInjector()
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
 
+			assert.Equal(t, tt.wantErr, err)
 			assert.Equal(t, tt.want, i)
 		})
 	}
@@ -225,7 +478,11 @@ func TestRejectInjectorHandler(t *testing.T) {
 		give *RejectInjector
 	}{
 		{
-			name: "valid",
+			name: "valid nil",
+			give: nil,
+		},
+		{
+			name: "valid empty",
 			give: &RejectInjector{},
 		},
 	}
@@ -255,38 +512,38 @@ func TestNewErrorInjector(t *testing.T) {
 	tests := []struct {
 		give    int
 		want    *ErrorInjector
-		wantErr bool
+		wantErr error
 	}{
 		{
 			give:    -1,
 			want:    nil,
-			wantErr: true,
+			wantErr: ErrInvalidHTTPCode,
 		},
 		{
 			give:    0,
 			want:    nil,
-			wantErr: true,
+			wantErr: ErrInvalidHTTPCode,
 		},
 		{
-			give: 200,
+			give: testHandlerCode,
 			want: &ErrorInjector{
-				statusCode: 200,
-				statusText: http.StatusText(200),
+				statusCode: testHandlerCode,
+				statusText: testHandlerBody,
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
-			give: 500,
+			give: http.StatusInternalServerError,
 			want: &ErrorInjector{
-				statusCode: 500,
-				statusText: http.StatusText(500),
+				statusCode: http.StatusInternalServerError,
+				statusText: http.StatusText(http.StatusInternalServerError),
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			give:    120000,
 			want:    nil,
-			wantErr: true,
+			wantErr: ErrInvalidHTTPCode,
 		},
 	}
 
@@ -296,12 +553,8 @@ func TestNewErrorInjector(t *testing.T) {
 			t.Parallel()
 
 			i, err := NewErrorInjector(tt.give)
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
 
+			assert.Equal(t, tt.wantErr, err)
 			assert.Equal(t, tt.want, i)
 
 		})
@@ -317,10 +570,31 @@ func TestErrorInjectorHandler(t *testing.T) {
 		wantBody string
 	}{
 		{
+			name:     "nil",
+			give:     nil,
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name:     "empty",
+			give:     &ErrorInjector{},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "1",
+			give: &ErrorInjector{
+				statusCode: 1,
+				statusText: "one",
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
 			name: "200",
 			give: &ErrorInjector{
-				statusCode: 200,
-				statusText: http.StatusText(200),
+				statusCode: testHandlerCode,
+				statusText: testHandlerBody,
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
@@ -328,20 +602,20 @@ func TestErrorInjectorHandler(t *testing.T) {
 		{
 			name: "418",
 			give: &ErrorInjector{
-				statusCode: 418,
-				statusText: http.StatusText(418),
+				statusCode: http.StatusTeapot,
+				statusText: http.StatusText(http.StatusTeapot),
 			},
-			wantCode: 418,
-			wantBody: http.StatusText(418),
+			wantCode: http.StatusTeapot,
+			wantBody: http.StatusText(http.StatusTeapot),
 		},
 		{
 			name: "500",
 			give: &ErrorInjector{
-				statusCode: 500,
-				statusText: http.StatusText(500),
+				statusCode: http.StatusInternalServerError,
+				statusText: http.StatusText(http.StatusInternalServerError),
 			},
-			wantCode: 500,
-			wantBody: http.StatusText(500),
+			wantCode: http.StatusInternalServerError,
+			wantBody: http.StatusText(http.StatusInternalServerError),
 		},
 	}
 
@@ -371,15 +645,23 @@ func TestNewSlowInjector(t *testing.T) {
 	tests := []struct {
 		give    time.Duration
 		want    *SlowInjector
-		wantErr bool
+		wantErr error
 	}{
+		{
+			give: 0,
+			want: &SlowInjector{
+				duration: 0,
+				sleep:    time.Sleep,
+			},
+			wantErr: nil,
+		},
 		{
 			give: time.Millisecond,
 			want: &SlowInjector{
 				duration: time.Millisecond,
 				sleep:    time.Sleep,
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			give: time.Millisecond * 1000,
@@ -387,7 +669,7 @@ func TestNewSlowInjector(t *testing.T) {
 				duration: time.Second,
 				sleep:    time.Sleep,
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 		{
 			give: time.Hour * 1000000,
@@ -395,7 +677,7 @@ func TestNewSlowInjector(t *testing.T) {
 				duration: time.Hour * 1000000,
 				sleep:    time.Sleep,
 			},
-			wantErr: false,
+			wantErr: nil,
 		},
 	}
 
@@ -405,12 +687,8 @@ func TestNewSlowInjector(t *testing.T) {
 			t.Parallel()
 
 			i, err := NewSlowInjector(tt.give)
-			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-			}
 
+			assert.Equal(t, tt.wantErr, err)
 			assert.Equal(t, tt.want.duration, i.duration)
 		})
 	}
@@ -425,6 +703,18 @@ func TestSlowInjectorHandler(t *testing.T) {
 		wantCode int
 		wantBody string
 	}{
+		{
+			name:     "nil",
+			give:     nil,
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name:     "empty",
+			give:     &SlowInjector{},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
 		{
 			name: "valid",
 			give: &SlowInjector{

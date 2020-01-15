@@ -96,6 +96,5 @@ ok      github.com/github/fault 8.525s
 The package is mostly implemented, however breaking API changes may still happen before the `v1.0.0` release. The fault package is intentionally simple and new features are unlikely to be implemented. Here are a few things that may still be added before `v1.0.0`.
 
 - Option to enable statsd exporting
-- Option to pass a custom fault handler function
 - Option to always run faults if a certain header is passed
 - Option to slow requests in a random distribution instead of a fixed value

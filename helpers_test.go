@@ -7,8 +7,11 @@ import (
 )
 
 const (
-	testHandlerCode = http.StatusOK
-	testHandlerBody = "OK"
+	// Don't use http.StatusOK because some operations default to that and
+	// then we can't tell the difference between what testHandler wrote
+	// and what the operation wrote
+	testHandlerCode = http.StatusAccepted
+	testHandlerBody = "Accepted"
 )
 
 var testHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
@@ -64,7 +67,5 @@ func (i *testInjector) Handler(next http.Handler) http.Handler {
 			return
 		})
 	}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r)
-	})
+	return next
 }
