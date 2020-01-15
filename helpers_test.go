@@ -1,127 +1,39 @@
-package fault_test
+package fault
 
 import (
-	"context"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
-
-	"github.com/github/fault"
 )
 
 const (
-	testHandlerCode        = http.StatusOK
-	testHandlerContentType = "application/json"
-	testHandlerBody        = `{"status": "OK"}`
+	testHandlerCode = http.StatusOK
+	testHandlerBody = "OK"
 )
 
-// assertEqual asserts that two objects are equal. Does not support certain objects
-// that are not used in this project's tests
-func assertEqual(t *testing.T, expected, actual interface{}, msg ...interface{}) {
-	t.Helper()
-
-	if expected != actual {
-		t.Errorf(fmt.Sprintf("Not Equal: \n"+
-			"expected: %v\n"+
-			"actual  : %v\n"+
-			"message : %s", expected, actual, fmt.Sprint(msg...)))
-	}
-}
-
-// assertTimeWithin assets that a time.Duration is within two other time.Duration
-func assertTimeWithin(t *testing.T, lower, actual, upper time.Duration, msg ...interface{}) {
-	t.Helper()
-
-	if actual < lower || actual > upper {
-		t.Errorf(fmt.Sprintf("Not Within: \n"+
-			"expected: %v < %v < %v \n"+
-			"message : %s", lower, actual, upper, fmt.Sprint(msg...)))
-	}
-}
-
-// testHandler simulates a good request. When no faults are enabled we should
-// expect this result back immediately.
-var testHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(testHandlerCode)
-	w.Header().Set("Content-Type", testHandlerContentType)
-	w.Write([]byte(testHandlerBody))
+var testHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+	http.Error(w, testHandlerBody, testHandlerCode)
 })
 
-// testRequest abstracts creating a standard request that we use in all tests
-func testRequest(t *testing.T, ctx context.Context) *http.Request {
+func testRequest(t *testing.T, fs ...*Fault) *httptest.ResponseRecorder {
 	t.Helper()
 
-	req, err := http.NewRequestWithContext(ctx, "GET", "/", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	return req
-}
-
-// sendRequest abstracts sending a standard request with N number of faults
-// chained before our testHandler. The faults that are passed first in the
-// list will execute last in the chain.
-func sendRequest(t *testing.T, fs ...*fault.Fault) *httptest.ResponseRecorder {
-	t.Helper()
-
-	req := testRequest(t, context.Background())
+	req := httptest.NewRequest("GET", "/", nil)
 	rr := httptest.NewRecorder()
 
-	app := fs[0].Handler(testHandler)
-
+	finalHandler := fs[0].Handler(testHandler)
 	for _, f := range fs[1:] {
-		app = f.Handler(app)
+		finalHandler = f.Handler(finalHandler)
 	}
 
-	app.ServeHTTP(rr, req)
+	finalHandler.ServeHTTP(rr, req)
 
 	return rr
 }
 
-// sendRequestExpectTimeout does the same as sendRequest except that the test will
-// fail if we don't receive a timeout in the configured amount of time.
-func sendRequestExpectTimeout(t *testing.T, f *fault.Fault, to time.Duration) *httptest.ResponseRecorder {
+func testRequestExpectPanic(t *testing.T, fs ...*Fault) *httptest.ResponseRecorder {
 	t.Helper()
 
-	done := make(chan bool, 1)
-
-	ctx, cancel := context.WithTimeout(context.Background(), to)
-	defer cancel()
-
-	req := testRequest(t, ctx)
-	rr := httptest.NewRecorder()
-	app := f.Handler(testHandler)
-
-	go func() {
-		// If we don't reach timeout it's common in our tests that we panic, catch that here
-		defer func() {
-			if r := recover(); r != nil {
-				t.Errorf("expected: fail with timeout %v got: panic: %v", to, r)
-			}
-		}()
-		app.ServeHTTP(rr, req)
-		done <- true
-	}()
-
-	select {
-	case <-done:
-		t.Errorf("expected to fail with timeout %v", to)
-	case <-ctx.Done():
-		return rr
-	}
-
-	return rr
-}
-
-// sendRequestExpectPanic does the same as sendRequest except that the test
-// will fail if we don't receive an http.ErrAbortHandler panic.
-func sendRequestExpectPanic(t *testing.T, f *fault.Fault) *httptest.ResponseRecorder {
-	t.Helper()
-
-	// Recover from our expected http.ErrAbortHandler panics but fail on others
 	defer func() {
 		if r := recover(); r != nil {
 			if r != http.ErrAbortHandler {
@@ -130,10 +42,29 @@ func sendRequestExpectPanic(t *testing.T, f *fault.Fault) *httptest.ResponseReco
 		}
 	}()
 
-	req := testRequest(t, context.Background())
-	rr := httptest.NewRecorder()
-	app := f.Handler(testHandler)
-	app.ServeHTTP(rr, req)
+	rr := testRequest(t, fs...)
 
 	return rr
+}
+
+type testInjector struct {
+	resp500 bool
+}
+
+func newTestInjector(resp500 bool) *testInjector {
+	return &testInjector{
+		resp500: resp500,
+	}
+}
+
+func (i *testInjector) Handler(next http.Handler) http.Handler {
+	if i.resp500 {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, http.StatusText(500), 500)
+			return
+		})
+	}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+	})
 }

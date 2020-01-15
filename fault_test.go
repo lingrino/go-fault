@@ -1,134 +1,182 @@
-package fault_test
+package fault
 
 import (
 	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/github/fault"
+	"github.com/stretchr/testify/assert"
 )
 
-// TestHandlerDisabled tests that the request proceeds normally when
-// our middleware is disabled
-func TestHandlerDisabled(t *testing.T) {
+func TestNewFault(t *testing.T) {
 	t.Parallel()
 
-	f := fault.New(fault.Options{
-		Enabled: false,
-	})
-
-	rr := sendRequest(t, f)
-
-	assertEqual(t, testHandlerCode, rr.Code, "wrong status code")
-	assertEqual(t, testHandlerBody, rr.Body.String(), "wrong body")
-}
-
-// TestHandlerInvalidType tests that the request proceeds normally when
-// we provide an invalid type
-func TestHandlerInvalidType(t *testing.T) {
-	t.Parallel()
-
-	f := fault.New(fault.Options{
-		Enabled: true,
-		Type:    "INVALID",
-	})
-
-	rr := sendRequest(t, f)
-
-	assertEqual(t, testHandlerCode, rr.Code, "wrong status code")
-	assertEqual(t, testHandlerBody, rr.Body.String(), "wrong body")
-}
-
-// TestHelperLog tests that we log as expected with both the standard
-// logger and a custom provided logger while in debug mode.
-func TestHelperLog(t *testing.T) {
-	t.Parallel()
-
-	// Test with a custom logger
-	f := fault.New(fault.Options{
-		Enabled:           true,
-		Type:              fault.Error,
-		Value:             500,
-		PercentOfRequests: 50,
-		Debug:             true,
-		Logger:            log.New(ioutil.Discard, "PREFIX", log.LstdFlags),
-	})
-
-	rr := sendRequest(t, f)
-
-	assertEqual(t, testHandlerCode, rr.Code, "wrong status code")
-	assertEqual(t, testHandlerBody, rr.Body.String(), "wrong body")
-
-	// Test with the standard logger
-	log.SetOutput(ioutil.Discard)
-	f = fault.New(fault.Options{
-		Enabled:           true,
-		Type:              fault.Error,
-		Value:             500,
-		PercentOfRequests: 50,
-		Debug:             true,
-	})
-
-	rr = sendRequest(t, f)
-
-	assertEqual(t, testHandlerCode, rr.Code, "wrong status code")
-	assertEqual(t, testHandlerBody, rr.Body.String(), "wrong body")
-}
-
-// TestHandlerPercentDo indirectly tests the percentDo helper function by running an ERROR fault
-// injection with different percents and validating that the faults occur at approximately those percents
-//
-// NOTE: Except for this test all other tests should use 0.0 or 1.0 for percentRequests
-//       so that we have deterministic results and we don't test percentDo in multiple places
-func TestHelperPercentDo(t *testing.T) {
-	t.Parallel()
-
-	// allowableRange is added/subtracted from percentExpected to get the allowed +/-
-	// deviation from the expected percent. We're allowing a .5% deviation
-	cases := []struct {
-		percentRequests float32
-		percentExpected float32
-		allowableRange  float32
+	tests := []struct {
+		name      string
+		give      Options
+		wantFault *Fault
+		wantErr   bool
 	}{
-		{1.1, 0.0, 0},
-		{1.0, 1.0, 0},
-		{0.75, 0.75, 0.005},
-		{0.3298, 0.3298, 0.005},
-		{0.0001, 0.0001, 0.005},
-		{0.0, 0.0, 0},
-		{-0.1, 0.0, 0},
+		{
+			name: "valid",
+			give: Options{
+				Enabled:           true,
+				Injector:          newTestInjector(false),
+				PercentOfRequests: 1.0,
+			},
+			wantFault: &Fault{
+				opt: Options{
+					Enabled: true,
+					Injector: &testInjector{
+						resp500: false,
+					},
+					PercentOfRequests: 1.0,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid injector",
+			give: Options{
+				Injector:          nil,
+				PercentOfRequests: 1.0,
+			},
+			wantFault: nil,
+			wantErr:   true,
+		},
+		{
+			name: "invalid percent",
+			give: Options{
+				Injector:          newTestInjector(false),
+				PercentOfRequests: 1.1,
+			},
+			wantFault: nil,
+			wantErr:   true,
+		},
 	}
 
-	for _, tc := range cases {
-		tc := tc
-		t.Run(fmt.Sprintf("%g", tc.percentRequests), func(t *testing.T) {
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			f := fault.New(fault.Options{
-				Enabled:           true,
-				Type:              fault.Error,
-				Value:             500,
-				PercentOfRequests: tc.percentRequests,
-			})
+			f, err := NewFault(tt.give)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tt.wantFault, f)
+		})
+	}
+}
+
+func TestFaultHandler(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		give     *Fault
+		wantCode int
+		wantBody string
+	}{
+		{
+			name: "not enabled",
+			give: &Fault{
+				opt: Options{
+					Enabled: false,
+					Injector: &testInjector{
+						resp500: false,
+					},
+					PercentOfRequests: 1.0,
+				},
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "zero percent",
+			give: &Fault{
+				opt: Options{
+					Enabled: true,
+					Injector: &testInjector{
+						resp500: false,
+					},
+					PercentOfRequests: 0.0,
+				},
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "100 percent",
+			give: &Fault{
+				opt: Options{
+					Enabled: true,
+					Injector: &testInjector{
+						resp500: false,
+					},
+					PercentOfRequests: 1.0,
+				},
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			rr := testRequest(t, tt.give)
+
+			assert.Equal(t, tt.wantCode, rr.Code)
+			assert.Equal(t, tt.wantBody, strings.TrimSpace(rr.Body.String()))
+		})
+	}
+}
+
+func TestFaultPercentDo(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		givePercent float32
+		wantRange   float32
+	}{
+		{1.0, 0},
+		{0.75, 0.005},
+		{0.3298, 0.005},
+		{0.0001, 0.005},
+		{0.0, 0.0},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(fmt.Sprintf("%g", tt.givePercent), func(t *testing.T) {
+			t.Parallel()
+
+			f := &Fault{
+				opt: Options{
+					PercentOfRequests: tt.givePercent,
+				},
+			}
 
 			var errorC, totalC float32
-
 			for totalC <= 100000 {
-				rr := sendRequest(t, f)
-				if rr.Code == 500 {
+				result := f.percentDo()
+				if result {
 					errorC++
 				}
 				totalC++
 			}
 
-			minP := tc.percentExpected - tc.allowableRange
+			minP := tt.givePercent - tt.wantRange
 			per := errorC / totalC
-			maxP := tc.percentExpected + tc.allowableRange
+			maxP := tt.givePercent + tt.wantRange
 
 			if per < minP || per > maxP {
 				t.Errorf("wrong distribution. expected: %v < per < %v, got: %v", minP, maxP, per)
@@ -137,219 +185,273 @@ func TestHelperPercentDo(t *testing.T) {
 	}
 }
 
-// TestHandlerReject tests how we handle faults of the REJECT type. We only need to run one
-// test with 0% chance and one with 100% for full coverage.
-func TestHandlerReject(t *testing.T) {
+func TestNewRejectInjector(t *testing.T) {
 	t.Parallel()
 
-	cases := []struct {
-		percentOfRequests float32
+	tests := []struct {
+		name    string
+		want    *RejectInjector
+		wantErr bool
 	}{
-		{0.0},
-		{1.0},
+		{
+			name:    "valid",
+			want:    &RejectInjector{},
+			wantErr: false,
+		},
 	}
 
-	for _, tc := range cases {
-		tc := tc
-		t.Run(fmt.Sprintf("%v", tc.percentOfRequests), func(t *testing.T) {
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-			f := fault.New(fault.Options{
-				Enabled:           true,
-				Type:              fault.Reject,
-				PercentOfRequests: tc.percentOfRequests,
-			})
-
-			var rr *httptest.ResponseRecorder
-			if tc.percentOfRequests == 1.0 {
-				rr = sendRequestExpectPanic(t, f)
+			i, err := NewRejectInjector()
+			if tt.wantErr {
+				assert.Error(t, err)
 			} else {
-				rr = sendRequest(t, f)
+				assert.NoError(t, err)
 			}
 
-			if rr != nil && tc.percentOfRequests == 1.0 {
-				t.Errorf("expected: nil request got: %v", rr)
-			}
-
-			if rr != nil && rr.Code != testHandlerCode && tc.percentOfRequests == 0.0 {
-				t.Errorf("wrong status code. expected: %v got: %v", testHandlerCode, rr.Code)
-			}
-
-			if rr != nil && rr.Body.String() != testHandlerBody && tc.percentOfRequests == 0.0 {
-				t.Errorf("wrong body. expected: %v got: %v", testHandlerBody, rr.Body.String())
-			}
+			assert.Equal(t, tt.want, i)
 		})
 	}
 }
 
-// TestHandlerError tests how we handle faults of the ERROR type. We test with a bunch of
-// valid and invalid error codes. With invalid codes we expect the handler to do nothing.
-func TestHandlerError(t *testing.T) {
+func TestRejectInjectorHandler(t *testing.T) {
 	t.Parallel()
 
-	cases := []struct {
-		sendCode   uint
-		expectCode uint
-		expectBody string
+	tests := []struct {
+		name string
+		give *RejectInjector
 	}{
-		{0, testHandlerCode, testHandlerBody},
-		{1, testHandlerCode, testHandlerBody},
-		{73, testHandlerCode, testHandlerBody},
-		{100, 100, http.StatusText(100)},
-		{199, testHandlerCode, testHandlerBody},
-		{200, 200, http.StatusText(200)},
-		{230, testHandlerCode, testHandlerBody},
-		{404, 404, http.StatusText(404)},
-		{500, 500, http.StatusText(500)},
-		{501, 501, http.StatusText(501)},
-		{600, testHandlerCode, testHandlerBody},
-		{120000, testHandlerCode, testHandlerBody},
+		{
+			name: "valid",
+			give: &RejectInjector{},
+		},
 	}
 
-	for _, tc := range cases {
-		tc := tc
-		t.Run(fmt.Sprintf("Code %v", tc.sendCode), func(t *testing.T) {
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			f := fault.New(fault.Options{
-				Enabled:           true,
-				Type:              fault.Error,
-				Value:             tc.sendCode,
-				PercentOfRequests: 1.0,
-			})
+			f := &Fault{
+				opt: Options{
+					Enabled:           true,
+					Injector:          tt.give,
+					PercentOfRequests: 1.0,
+				},
+			}
 
-			rr := sendRequest(t, f)
-
-			assertEqual(t, int(tc.expectCode), rr.Code, "wrong status code")
-			assertEqual(t, tc.expectBody, strings.TrimSpace(rr.Body.String()), "wrong body")
+			rr := testRequestExpectPanic(t, f)
+			assert.Nil(t, rr)
 		})
 	}
 }
 
-// TestHandlerSlow tests how we handle faults of the SLOW type. Go time.Sleep()
-// guarantees a sleep of AT LEAST the provided duration but potentially longer.
-// In this package we strive to have no more than 5ms longer than requested.
-// 5ms should be large enough to prevent flaky results on different machines.
-func TestHandlerSlow(t *testing.T) {
+func TestNewErrorInjector(t *testing.T) {
 	t.Parallel()
 
-	cases := []struct {
-		sendMs            uint
-		expectMs          time.Duration
-		allowableRange    time.Duration
-		percentOfRequests float32
+	tests := []struct {
+		give    int
+		want    *ErrorInjector
+		wantErr bool
 	}{
-		{0, 0 * time.Millisecond, 1 * time.Millisecond, 0.0},
-		{0, 0 * time.Millisecond, 1 * time.Millisecond, 1.0},
-		{1, 1 * time.Millisecond, 3 * time.Millisecond, 1.0},
-		{10, 10 * time.Millisecond, 5 * time.Millisecond, 1.0},
-		{39, 39 * time.Millisecond, 5 * time.Millisecond, 1.0},
-		{75, 75 * time.Millisecond, 5 * time.Millisecond, 1.0},
+		{
+			give:    -1,
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			give:    0,
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			give: 200,
+			want: &ErrorInjector{
+				statusCode: 200,
+				statusText: http.StatusText(200),
+			},
+			wantErr: false,
+		},
+		{
+			give: 500,
+			want: &ErrorInjector{
+				statusCode: 500,
+				statusText: http.StatusText(500),
+			},
+			wantErr: false,
+		},
+		{
+			give:    120000,
+			want:    nil,
+			wantErr: true,
+		},
 	}
 
-	// First measure the time it takes to run with a 1ms wait, so that we
-	// can substract "the speed of the system" from the "correct sleep time"
-	f := fault.New(fault.Options{
-		Enabled:           true,
-		Type:              fault.Slow,
-		Value:             1,
-		PercentOfRequests: 1.0,
-	})
-
-	t0 := time.Now()
-	sendRequest(t, f)
-	benchD := time.Since(t0) - 1*time.Millisecond
-
-	for _, tc := range cases {
-		tc := tc
-
-		t.Run(fmt.Sprintf("%v", tc.sendMs), func(t *testing.T) {
+	for _, tt := range tests {
+		tt := tt
+		t.Run(fmt.Sprintf("%v", tt.give), func(t *testing.T) {
 			t.Parallel()
 
-			f := fault.New(fault.Options{
-				Enabled:           true,
-				Type:              fault.Slow,
-				Value:             tc.sendMs,
-				PercentOfRequests: tc.percentOfRequests,
-			})
+			i, err := NewErrorInjector(tt.give)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
 
-			t0 := time.Now()
-			rr := sendRequest(t, f)
-			took := time.Since(t0)
+			assert.Equal(t, tt.want, i)
 
-			minD := time.Duration(tc.expectMs)
-			maxD := time.Duration(tc.expectMs) + tc.allowableRange + benchD
+		})
+	}
+}
+func TestErrorInjectorHandler(t *testing.T) {
+	t.Parallel()
 
-			assertTimeWithin(t, minD, took, maxD, "wrong latency duration")
-			assertEqual(t, testHandlerCode, rr.Code, "wrong status code")
-			assertEqual(t, testHandlerBody, rr.Body.String(), "wrong body")
+	tests := []struct {
+		name     string
+		give     *ErrorInjector
+		wantCode int
+		wantBody string
+	}{
+		{
+			name: "200",
+			give: &ErrorInjector{
+				statusCode: 200,
+				statusText: http.StatusText(200),
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "418",
+			give: &ErrorInjector{
+				statusCode: 418,
+				statusText: http.StatusText(418),
+			},
+			wantCode: 418,
+			wantBody: http.StatusText(418),
+		},
+		{
+			name: "500",
+			give: &ErrorInjector{
+				statusCode: 500,
+				statusText: http.StatusText(500),
+			},
+			wantCode: 500,
+			wantBody: http.StatusText(500),
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f := &Fault{
+				opt: Options{
+					Enabled:           true,
+					Injector:          tt.give,
+					PercentOfRequests: 1.0,
+				},
+			}
+
+			rr := testRequest(t, f)
+			assert.Equal(t, tt.wantCode, rr.Code)
+			assert.Equal(t, tt.wantBody, strings.TrimSpace(rr.Body.String()))
 		})
 	}
 }
 
-// TestHandlerChained tests how we handle chained faults, where we run one fault after
-// another and we expect the second fault to ALWAYS activate if the first fault activated.
-func TestHandlerChained(t *testing.T) {
+func TestNewSlowInjector(t *testing.T) {
 	t.Parallel()
 
-	// First test that the chained fault ALWAYS runs when the first fault is injected.
-	t.Run("always", func(t *testing.T) {
-		t.Parallel()
+	tests := []struct {
+		give    time.Duration
+		want    *SlowInjector
+		wantErr bool
+	}{
+		{
+			give: time.Millisecond,
+			want: &SlowInjector{
+				duration: time.Millisecond,
+				sleep:    time.Sleep,
+			},
+			wantErr: false,
+		},
+		{
+			give: time.Millisecond * 1000,
+			want: &SlowInjector{
+				duration: time.Second,
+				sleep:    time.Sleep,
+			},
+			wantErr: false,
+		},
+		{
+			give: time.Hour * 1000000,
+			want: &SlowInjector{
+				duration: time.Hour * 1000000,
+				sleep:    time.Sleep,
+			},
+			wantErr: false,
+		},
+	}
 
-		f1 := fault.New(fault.Options{
-			Enabled:           true,
-			Type:              fault.Slow,
-			Value:             10,
-			PercentOfRequests: 1.0,
+	for _, tt := range tests {
+		tt := tt
+		t.Run(fmt.Sprintf("%v", tt.give), func(t *testing.T) {
+			t.Parallel()
+
+			i, err := NewSlowInjector(tt.give)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tt.want.duration, i.duration)
 		})
+	}
+}
 
-		f2 := fault.New(fault.Options{
-			Enabled:           true,
-			Type:              fault.Error,
-			Value:             500,
-			PercentOfRequests: 0.0,
-			Chained:           true,
+func TestSlowInjectorHandler(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		give     *SlowInjector
+		wantCode int
+		wantBody string
+	}{
+		{
+			name: "valid",
+			give: &SlowInjector{
+				duration: time.Millisecond,
+				sleep:    func(d time.Duration) { return },
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			f := &Fault{
+				opt: Options{
+					Enabled:           true,
+					Injector:          tt.give,
+					PercentOfRequests: 1.0,
+				},
+			}
+
+			rr := testRequest(t, f)
+			assert.Equal(t, tt.wantCode, rr.Code)
+			assert.Equal(t, tt.wantBody, strings.TrimSpace(rr.Body.String()))
 		})
-
-		t0 := time.Now()
-		rr := sendRequest(t, f2, f1)
-		took := time.Since(t0)
-
-		minD := time.Duration(10 * time.Millisecond)
-		maxD := time.Duration(13 * time.Millisecond)
-
-		assertTimeWithin(t, minD, took, maxD, "wrong latency duration")
-		assertEqual(t, http.StatusInternalServerError, rr.Code, "wrong status code")
-		assertEqual(t, http.StatusText(500), strings.TrimSpace(rr.Body.String()), "wrong body")
-	})
-
-	// Next test that the chained fault NEVER runs when the first fault is not injected
-	t.Run("never", func(t *testing.T) {
-		t.Parallel()
-
-		f1 := fault.New(fault.Options{
-			Enabled:           true,
-			Type:              fault.Slow,
-			Value:             10,
-			PercentOfRequests: 0.0,
-		})
-
-		f2 := fault.New(fault.Options{
-			Enabled:           true,
-			Type:              fault.Error,
-			Value:             500,
-			PercentOfRequests: 1.0,
-			Chained:           true,
-		})
-
-		t0 := time.Now()
-		rr := sendRequest(t, f2, f1)
-		took := time.Since(t0)
-
-		minD := time.Duration(0 * time.Millisecond)
-		maxD := time.Duration(3 * time.Millisecond)
-
-		assertTimeWithin(t, minD, took, maxD, "wrong latency duration")
-		assertEqual(t, testHandlerCode, rr.Code, "wrong status code")
-		assertEqual(t, testHandlerBody, rr.Body.String(), "wrong body")
-	})
+	}
 }
