@@ -233,8 +233,8 @@ func TestNewChainInjector(t *testing.T) {
 			name:    "nil",
 			give:    nil,
 			wantLen: 0,
-			wantNil: true,
-			wantErr: ErrNilInjector,
+			wantNil: false,
+			wantErr: nil,
 		},
 		{
 			name:    "empty",
