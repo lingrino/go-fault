@@ -49,12 +49,8 @@ func NewFault(o Options) (*Fault, error) {
 
 // Handler returns the main fault handler, which runs Injector.Handler a percent of the time.
 func (f *Fault) Handler(next http.Handler) http.Handler {
-	if f != nil {
-		if f.opt.Enabled {
-			if f.percentDo() && f.opt.Injector != nil {
-				return f.opt.Injector.Handler(next)
-			}
-		}
+	if f.opt.Enabled && f.percentDo() && f.opt.Injector != nil {
+		return f.opt.Injector.Handler(next)
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

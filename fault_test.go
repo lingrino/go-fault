@@ -98,6 +98,18 @@ func TestFaultHandler(t *testing.T) {
 			wantBody: testHandlerBody,
 		},
 		{
+			name: "nil injector",
+			give: &Fault{
+				opt: Options{
+					Enabled:           true,
+					Injector:          nil,
+					PercentOfRequests: 1.0,
+				},
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
 			name: "not enabled",
 			give: &Fault{
 				opt: Options{
