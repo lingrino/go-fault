@@ -84,9 +84,9 @@ type Injector interface {
 // NewChainInjector combines many injectors into a single chain injector. In a chain injector
 // the Handler() for each injector will execute in the order provided.
 func NewChainInjector(is ...Injector) (*ChainInjector, error) {
-	if is == nil {
-		return nil, ErrNilInjector
-	}
+	// if is == nil {
+	// 	return nil, ErrNilInjector
+	// }
 
 	chainInjector := &ChainInjector{}
 	for _, i := range is {
