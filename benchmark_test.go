@@ -52,8 +52,7 @@ func BenchmarkNoFault(b *testing.B) {
 
 // BenchmarkFaultDisabled benchmarks a disabled Fault struct.
 func BenchmarkFaultDisabled(b *testing.B) {
-	i, _ := fault.NewErrorInjector(500)
-
+	i, _ := fault.NewErrorInjector(http.StatusInternalServerError)
 	f, _ := fault.NewFault(fault.Options{
 		Enabled:           false,
 		Injector:          i,
@@ -65,7 +64,7 @@ func BenchmarkFaultDisabled(b *testing.B) {
 
 // BenchmarkFaultErrorZeroPercent benchmarks an enabled fault struct that runs 0% of the time.
 func BenchmarkFaultErrorZeroPercent(b *testing.B) {
-	i, _ := fault.NewErrorInjector(500)
+	i, _ := fault.NewErrorInjector(http.StatusInternalServerError)
 
 	f, _ := fault.NewFault(fault.Options{
 		Enabled:           true,
@@ -78,7 +77,7 @@ func BenchmarkFaultErrorZeroPercent(b *testing.B) {
 
 // BenchmarkFaultError100Percent benchmarks an enabled fault struct that runs 100% of the time.
 func BenchmarkFaultError100Percent(b *testing.B) {
-	i, _ := fault.NewErrorInjector(500)
+	i, _ := fault.NewErrorInjector(http.StatusInternalServerError)
 
 	f, _ := fault.NewFault(fault.Options{
 		Enabled:           true,

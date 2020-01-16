@@ -4,7 +4,7 @@ The fault package provides go middleware that makes it easy to inject faults int
 
 ## Documentation
 
-For detailed package documentation you can run `go doc` or run a godoc server locally by running `godoc -http=:6060` and then visiting <localhost:6060/pkg/github.com/github/go-fault/> (make sure you cloned into your $GOPATH) in your browser.
+For detailed package documentation and examples you can run `go doc` or run a godoc server locally by running `godoc -http=:6060` and then visiting <localhost:6060/pkg/github.com/github/go-fault/> (make sure you cloned into your $GOPATH) in your browser.
 
 ## Usage
 
@@ -73,72 +73,3 @@ The package is mostly implemented, however breaking API changes may still happen
 - Option to enable statsd exporting
 - Option to always run faults if a certain header is passed
 - Option to slow requests in a random distribution instead of a fixed value
-
-## Full Example
-
-```go
-// main.go
-package main
-
-import (
-        "log"
-        "net/http"
-        "time"
-
-        "github.com/github/go-fault"
-)
-
-const (
-        testHandlerCode = http.StatusOK
-        testHandlerBody = "OK"
-)
-
-var mainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        http.Error(w, testHandlerBody, testHandlerCode)
-})
-
-func main() {
-        ri, err := fault.NewRejectInjector()
-        if err != nil {
-                log.Fatal(err)
-        }
-        rf, err := fault.NewFault(fault.Options{
-                Enabled:           true,
-                Injector:          ri,
-                PercentOfRequests: 0.25,
-        })
-        if err != nil {
-                log.Fatal(err)
-        }
-
-        ei, err := fault.NewErrorInjector(http.StatusInternalServerError)
-        if err != nil {
-                log.Fatal(err)
-        }
-        ef, err := fault.NewFault(fault.Options{
-                Enabled:           true,
-                Injector:          ei,
-                PercentOfRequests: 0.25,
-        })
-        if err != nil {
-                log.Fatal(err)
-        }
-
-        si, err := fault.NewSlowInjector(time.Second * 2)
-        if err != nil {
-                log.Fatal(err)
-        }
-        sf, err := fault.NewFault(fault.Options{
-                Enabled:           true,
-                Injector:          si,
-                PercentOfRequests: 0.25,
-        })
-        if err != nil {
-                log.Fatal(err)
-        }
-
-        handlerChain := sf.Handler(rf.Handler(ef.Handler(mainHandler)))
-
-        http.ListenAndServe("0.0.0.0:3000", handlerChain)
-}
-```
