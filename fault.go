@@ -36,8 +36,6 @@ type Options struct {
 
 // NewFault validates the provided options and returns a Fault struct.
 func NewFault(o Options) (*Fault, error) {
-	var err error
-
 	if o.Injector == nil {
 		return nil, ErrNilInjector
 	}
@@ -46,7 +44,7 @@ func NewFault(o Options) (*Fault, error) {
 		return nil, ErrInvalidPercent
 	}
 
-	return &Fault{opt: o}, err
+	return &Fault{opt: o}, nil
 }
 
 // Handler returns the main fault handler, which runs Injector.Handler a percent of the time.
@@ -86,8 +84,6 @@ type Injector interface {
 // NewChainInjector combines many injectors into a single chain injector. In a chain injector
 // the Handler() for each injector will execute in the order provided.
 func NewChainInjector(is ...Injector) (*ChainInjector, error) {
-	var err error
-
 	if is == nil {
 		return nil, ErrNilInjector
 	}
@@ -97,7 +93,7 @@ func NewChainInjector(is ...Injector) (*ChainInjector, error) {
 		chainInjector.middlewares = append(chainInjector.middlewares, i.Handler)
 	}
 
-	return chainInjector, err
+	return chainInjector, nil
 }
 
 // ChainInjector combines many injectors into a single chain injector. In a chain injector the
@@ -124,9 +120,7 @@ type RejectInjector struct{}
 
 // NewRejectInjector returns a RejectInjector struct.
 func NewRejectInjector() (*RejectInjector, error) {
-	var err error
-
-	return &RejectInjector{}, err
+	return &RejectInjector{}, nil
 }
 
 // Handler immediately rejects the request, returning an empty response.
@@ -148,8 +142,6 @@ type ErrorInjector struct {
 
 // NewErrorInjector returns an ErrorInjector that reponds with the configured status code.
 func NewErrorInjector(code int) (*ErrorInjector, error) {
-	var err error
-
 	statusText := http.StatusText(code)
 	if statusText == "" {
 		return nil, ErrInvalidHTTPCode
@@ -158,7 +150,7 @@ func NewErrorInjector(code int) (*ErrorInjector, error) {
 	return &ErrorInjector{
 		statusCode: code,
 		statusText: statusText,
-	}, err
+	}, nil
 }
 
 // Handler immediately responds with the configured HTTP status code and default status text for
@@ -183,12 +175,10 @@ type SlowInjector struct {
 
 // NewSlowInjector returns a SlowInjector that adds the configured latency.
 func NewSlowInjector(d time.Duration) (*SlowInjector, error) {
-	var err error
-
 	return &SlowInjector{
 		duration: d,
 		sleep:    time.Sleep,
-	}, err
+	}, nil
 }
 
 // Handler waits the configured duration and then continues the request.
