@@ -28,6 +28,7 @@ func main() {
                 Enabled:           true,
                 Injector:          slowInjector,
                 PercentOfRequests: 0.25,
+                PathBlacklist:     []string{"/ping", "/health"},
         })
 
         // Add 2 seconds of latency to 25% of our requests

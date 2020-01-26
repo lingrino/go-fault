@@ -63,6 +63,12 @@ which consolidates any number of Injectors into a single Injector that runs each
 Injectors sequentially. When you add the ChainInjector to a Fault the entire chain will always
 execute together.
 
+Blacklisting Paths
+
+The fault.Options struct has an option PathBlacklist. Any path you include in this list will never
+have faults run against it. The paths that you include must match exactly the past in req.URL.Path,
+including leading and trailing slashes.
+
 Custom Injectors
 
 The package provides an Injector interface and you can satisfy that interface to provide your own
