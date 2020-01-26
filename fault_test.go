@@ -30,6 +30,9 @@ func TestNewFault(t *testing.T) {
 				Enabled:           true,
 				Injector:          newTestInjector(false),
 				PercentOfRequests: 1.0,
+				PathBlacklist: []string{
+					"/donotinject",
+				},
 			},
 			wantFault: &Fault{
 				opt: Options{
@@ -38,6 +41,12 @@ func TestNewFault(t *testing.T) {
 						resp500: false,
 					},
 					PercentOfRequests: 1.0,
+					PathBlacklist: []string{
+						"/donotinject",
+					},
+				},
+				pathBlacklist: map[string]bool{
+					"/donotinject": true,
 				},
 			},
 			wantErr: nil,
@@ -150,6 +159,26 @@ func TestFaultHandler(t *testing.T) {
 			},
 			wantCode: http.StatusInternalServerError,
 			wantBody: http.StatusText(http.StatusInternalServerError),
+		},
+		{
+			name: "100 percent 500s with blacklist",
+			give: &Fault{
+				opt: Options{
+					Enabled: true,
+					Injector: &testInjector{
+						resp500: true,
+					},
+					PercentOfRequests: 1.0,
+					PathBlacklist: []string{
+						"/",
+					},
+				},
+				pathBlacklist: map[string]bool{
+					"/": true,
+				},
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
 		},
 		{
 			name: "100 percent",

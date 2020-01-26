@@ -19,6 +19,10 @@ var (
 // Fault is the main struct and combines an Injector with configuration.
 type Fault struct {
 	opt Options
+
+	// pathBlacklist is a dict representation of Options.PathBlacklist
+	// that is populated in NewFault and used to make path lookups faster
+	pathBlacklist map[string]bool
 }
 
 // Options holds configuration for a Fault.
@@ -32,10 +36,15 @@ type Options struct {
 	// PercentOfRequests is the percent of requests that should have the fault injected.
 	// 0.0 <= percent <= 1.0
 	PercentOfRequests float32
+
+	// PathBlacklist is a list of paths for which faults will never be injected
+	PathBlacklist []string
 }
 
 // NewFault validates the provided options and returns a Fault struct.
 func NewFault(o Options) (*Fault, error) {
+	output := &Fault{}
+
 	if o.Injector == nil {
 		return nil, ErrNilInjector
 	}
@@ -44,17 +53,30 @@ func NewFault(o Options) (*Fault, error) {
 		return nil, ErrInvalidPercent
 	}
 
-	return &Fault{opt: o}, nil
+	if len(o.PathBlacklist) > 0 {
+		output.pathBlacklist = make(map[string]bool, len(o.PathBlacklist))
+		for _, path := range o.PathBlacklist {
+			output.pathBlacklist[path] = true
+		}
+	}
+
+	output.opt = o
+
+	return output, nil
 }
 
 // Handler returns the main fault handler, which runs Injector.Handler a percent of the time.
 func (f *Fault) Handler(next http.Handler) http.Handler {
-	if f.opt.Enabled && f.percentDo() && f.opt.Injector != nil {
-		return f.opt.Injector.Handler(next)
-	}
-
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r)
+		if !f.opt.Enabled {
+			next.ServeHTTP(w, r)
+		} else if _, ok := f.pathBlacklist[r.URL.Path]; ok {
+			next.ServeHTTP(w, r)
+		} else if f.percentDo() && f.opt.Injector != nil {
+			f.opt.Injector.Handler(next).ServeHTTP(w, r)
+		} else {
+			next.ServeHTTP(w, r)
+		}
 	})
 }
 
