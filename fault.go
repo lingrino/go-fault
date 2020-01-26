@@ -7,6 +7,27 @@ import (
 	"time"
 )
 
+// ContextString is the type that all of our context keys will be
+type ContextString string
+
+// ContextValue is the value defined by ContextKey. It is a list of ContextString
+// that will be added by Injectors
+type ContextValue []ContextString
+
+const (
+	// ContextKey will be added to the request context of any injetor that does not return immediately
+	// (ex: SlowInjector) and the value will be ContextValue, a list of ContextString that describe what
+	// fault occurred.
+	ContextKey ContextString = "fault-injected"
+	// ContextValueError is added to ContextValue when an error (ex: misconfiguration)
+	// occurred while trying to inject a fault
+	ContextValueError ContextString = "fault-error"
+	// ContextValueDisabled is added to ContextValue when the fault is disabled
+	ContextValueDisabled ContextString = "fault-disabled"
+	// ContextValueSlowInjector is added to ContextValue when the SlowInjector is injected
+	ContextValueSlowInjector ContextString = "slow-injector"
+)
+
 var (
 	// ErrNilInjector returns when a nil Injector type is passed.
 	ErrNilInjector = errors.New("injector cannot be nil")
@@ -54,7 +75,7 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, updateRequestContextValue(r, ContextValueDisabled))
 	})
 }
 
@@ -181,6 +202,6 @@ func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 				i.sleep(i.duration)
 			}
 		}
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSlowInjector))
 	})
 }
