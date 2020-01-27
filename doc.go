@@ -66,14 +66,14 @@ execute together.
 Blacklisting Paths
 
 The fault.Options struct has an option PathBlacklist. Any path you include in this list will never
-have faults run against it. The paths that you include must match exactly the past in req.URL.Path,
+have faults run against it. The paths that you include must match exactly the path in req.URL.Path,
 including leading and trailing slashes.
 
 Whitelisting Paths
 
 The fault.Options struct has an option PathWhitelist. If you pass a non-empty list here then faults
-will only be evaluated on the paths provided. Path whitelists The paths that you include must match exactly the
-past in req.URL.Path, including leading and trailing slashes.
+will only be evaluated on the paths provided. Path blacklists take priority over whitelists. The paths
+that you include must match exactly the path in req.URL.Path, including leading and trailing slashes.
 
 Custom Injectors
 
