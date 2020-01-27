@@ -69,6 +69,12 @@ The fault.Options struct has an option PathBlacklist. Any path you include in th
 have faults run against it. The paths that you include must match exactly the past in req.URL.Path,
 including leading and trailing slashes.
 
+Whitelisting Paths
+
+The fault.Options struct has an option PathWhitelist. If you pass a non-empty list here then faults
+will only be evaluated on the paths provided. Path whitelists The paths that you include must match exactly the
+past in req.URL.Path, including leading and trailing slashes.
+
 Custom Injectors
 
 The package provides an Injector interface and you can satisfy that interface to provide your own

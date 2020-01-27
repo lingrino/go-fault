@@ -252,8 +252,8 @@ func TestFaultHandler(t *testing.T) {
 					"/": true,
 				},
 			},
-			wantCode: http.StatusInternalServerError,
-			wantBody: http.StatusText(http.StatusInternalServerError),
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
 		},
 		{
 			name: "100 percent",
