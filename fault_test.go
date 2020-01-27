@@ -33,6 +33,9 @@ func TestNewFault(t *testing.T) {
 				PathBlacklist: []string{
 					"/donotinject",
 				},
+				PathWhitelist: []string{
+					"/faultenabled",
+				},
 			},
 			wantFault: &Fault{
 				opt: Options{
@@ -44,9 +47,15 @@ func TestNewFault(t *testing.T) {
 					PathBlacklist: []string{
 						"/donotinject",
 					},
+					PathWhitelist: []string{
+						"/faultenabled",
+					},
 				},
 				pathBlacklist: map[string]bool{
 					"/donotinject": true,
+				},
+				pathWhitelist: map[string]bool{
+					"/faultenabled": true,
 				},
 			},
 			wantErr: nil,
@@ -175,6 +184,46 @@ func TestFaultHandler(t *testing.T) {
 				},
 				pathBlacklist: map[string]bool{
 					"/": true,
+				},
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "100 percent 500s with whitelist root",
+			give: &Fault{
+				opt: Options{
+					Enabled: true,
+					Injector: &testInjector{
+						resp500: true,
+					},
+					PercentOfRequests: 1.0,
+					PathWhitelist: []string{
+						"/",
+					},
+				},
+				pathWhitelist: map[string]bool{
+					"/": true,
+				},
+			},
+			wantCode: http.StatusInternalServerError,
+			wantBody: http.StatusText(http.StatusInternalServerError),
+		},
+		{
+			name: "100 percent 500s with whitelist other",
+			give: &Fault{
+				opt: Options{
+					Enabled: true,
+					Injector: &testInjector{
+						resp500: true,
+					},
+					PercentOfRequests: 1.0,
+					PathWhitelist: []string{
+						"/onlyinject",
+					},
+				},
+				pathWhitelist: map[string]bool{
+					"/onlyinject": true,
 				},
 			},
 			wantCode: testHandlerCode,

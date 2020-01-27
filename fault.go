@@ -23,6 +23,10 @@ type Fault struct {
 	// pathBlacklist is a dict representation of Options.PathBlacklist
 	// that is populated in NewFault and used to make path lookups faster
 	pathBlacklist map[string]bool
+
+	// pathWhitelist is a dict representation of Options.PathWhitelist
+	// that is populated in NewFault and used to make path lookups faster
+	pathWhitelist map[string]bool
 }
 
 // Options holds configuration for a Fault.
@@ -39,6 +43,10 @@ type Options struct {
 
 	// PathBlacklist is a list of paths for which faults will never be injected
 	PathBlacklist []string
+
+	// PathWhitelist is a list of paths for which faults will be evaluated. If PathWhitelist
+	// is empty then faults will evaluate on all paths.
+	PathWhitelist []string
 }
 
 // NewFault validates the provided options and returns a Fault struct.
@@ -60,6 +68,13 @@ func NewFault(o Options) (*Fault, error) {
 		}
 	}
 
+	if len(o.PathWhitelist) > 0 {
+		output.pathWhitelist = make(map[string]bool, len(o.PathWhitelist))
+		for _, path := range o.PathWhitelist {
+			output.pathWhitelist[path] = true
+		}
+	}
+
 	output.opt = o
 
 	return output, nil
@@ -68,11 +83,19 @@ func NewFault(o Options) (*Fault, error) {
 // Handler returns the main fault handler, which runs Injector.Handler a percent of the time.
 func (f *Fault) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !f.opt.Enabled {
-			next.ServeHTTP(w, r)
-		} else if _, ok := f.pathBlacklist[r.URL.Path]; ok {
-			next.ServeHTTP(w, r)
-		} else if f.percentDo() && f.opt.Injector != nil {
+		var evaluate bool
+
+		if f.opt.Enabled && f.opt.Injector != nil {
+			if len(f.pathWhitelist) > 0 {
+				if _, ok := f.pathWhitelist[r.URL.Path]; ok {
+					evaluate = true
+				}
+			} else if _, ok := f.pathBlacklist[r.URL.Path]; !ok {
+				evaluate = true
+			}
+		}
+
+		if evaluate && f.percentDo() {
 			f.opt.Injector.Handler(next).ServeHTTP(w, r)
 		} else {
 			next.ServeHTTP(w, r)
