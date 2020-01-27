@@ -86,12 +86,12 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 		var evaluate bool
 
 		if f.opt.Enabled && f.opt.Injector != nil {
-			if len(f.pathWhitelist) > 0 {
+			if _, ok := f.pathBlacklist[r.URL.Path]; !ok {
+				evaluate = true
+			} else if len(f.pathWhitelist) > 0 {
 				if _, ok := f.pathWhitelist[r.URL.Path]; ok {
 					evaluate = true
 				}
-			} else if _, ok := f.pathBlacklist[r.URL.Path]; !ok {
-				evaluate = true
 			}
 		}
 

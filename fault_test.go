@@ -170,7 +170,7 @@ func TestFaultHandler(t *testing.T) {
 			wantBody: http.StatusText(http.StatusInternalServerError),
 		},
 		{
-			name: "100 percent 500s with blacklist",
+			name: "100 percent 500s with blacklist root",
 			give: &Fault{
 				opt: Options{
 					Enabled: true,
@@ -224,6 +224,32 @@ func TestFaultHandler(t *testing.T) {
 				},
 				pathWhitelist: map[string]bool{
 					"/onlyinject": true,
+				},
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "100 percent 500s with whitelist and blacklist root",
+			give: &Fault{
+				opt: Options{
+					Enabled: true,
+					Injector: &testInjector{
+						resp500: true,
+					},
+					PercentOfRequests: 1.0,
+					PathBlacklist: []string{
+						"/",
+					},
+					PathWhitelist: []string{
+						"/",
+					},
+				},
+				pathBlacklist: map[string]bool{
+					"/": true,
+				},
+				pathWhitelist: map[string]bool{
+					"/": true,
 				},
 			},
 			wantCode: testHandlerCode,
