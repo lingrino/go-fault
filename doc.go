@@ -72,7 +72,7 @@ PathBlacklist take priority over the PathWhitelist, a path in both lists will ne
 against it. The paths that you include must match exactly the path in req.URL.Path, including
 leading and trailing slashes.
 
-Specifying very large lists of paths may cause memory or performace issues. If you're running into
+Specifying very large lists of paths may cause memory or performance issues. If you're running into
 these problems you should instead consider using your http router to enable the middleware on only a
 subset of your routes.
 
