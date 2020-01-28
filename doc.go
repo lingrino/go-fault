@@ -63,17 +63,18 @@ which consolidates any number of Injectors into a single Injector that runs each
 Injectors sequentially. When you add the ChainInjector to a Fault the entire chain will always
 execute together.
 
-Blacklisting Paths
+Blacklisting & Whitelisting Paths
 
-The fault.Options struct has an option PathBlacklist. Any path you include in this list will never
-have faults run against it. The paths that you include must match exactly the path in req.URL.Path,
-including leading and trailing slashes.
+The fault.Options struct has PathBlacklist and PathWhitelist options. Any path you include in the
+PathBlacklist will never have faults run against in. For PathWhitelist, if you provide a non-empty
+list then faults will not be run against any paths except those specified in PathWhitelist. The
+PathBlacklist take priority over the PathWhitelist, a path in both lists will never have a fault
+run against it. The paths that you include must match exactly the path in req.URL.Path, including
+leading and trailing slashes.
 
-Whitelisting Paths
-
-The fault.Options struct has an option PathWhitelist. If you pass a non-empty list here then faults
-will only be evaluated on the paths provided. Path blacklists take priority over whitelists. The paths
-that you include must match exactly the path in req.URL.Path, including leading and trailing slashes.
+Specifying very large lists of paths may cause memory or performace issues. If you're running into
+these problems you should instead consider using your http router to enable the middleware on only a
+subset of your routes.
 
 Custom Injectors
 
