@@ -83,22 +83,29 @@ func NewFault(o Options) (*Fault, error) {
 // Handler returns the main fault handler, which runs Injector.Handler a percent of the time.
 func (f *Fault) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var evaluate bool
+		var shouldEvaluate bool
 
+		// By default faults should not evaluate. Here we go through conditions where
+		// faults will evaluate, if everything is configured correctly
+
+		// f.opt.Enabled is the first check, to prioritize speed when faults are disabled
 		if f.opt.Enabled && f.opt.Injector != nil {
+			// If path is in blacklist, do not evaluate
 			if _, ok := f.pathBlacklist[r.URL.Path]; !ok {
+				// If whitelist exists and path is not in it, do not evaluate
 				if len(f.pathWhitelist) > 0 {
+					// If path is in the whitelist, evaluate
 					if _, ok := f.pathWhitelist[r.URL.Path]; ok {
-						evaluate = true
+						shouldEvaluate = true
 					}
 				} else {
-					evaluate = true
+					shouldEvaluate = true
 				}
 
 			}
 		}
 
-		if evaluate && f.percentDo() {
+		if shouldEvaluate && f.percentDo() {
 			f.opt.Injector.Handler(next).ServeHTTP(w, r)
 		} else {
 			next.ServeHTTP(w, r)
