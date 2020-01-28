@@ -21,6 +21,34 @@ func ExampleNewFault() {
 	// Output: <nil>
 }
 
+func ExampleNewFault_blacklist() {
+	ei, err := fault.NewErrorInjector(http.StatusInternalServerError)
+
+	_, err = fault.NewFault(fault.Options{
+		Enabled:           true,
+		Injector:          ei,
+		PercentOfRequests: 1.0,
+		PathBlacklist:     []string{"/ping", "/health"},
+	})
+
+	fmt.Println(err)
+	// Output: <nil>
+}
+
+func ExampleNewFault_whitelist() {
+	ei, err := fault.NewErrorInjector(http.StatusInternalServerError)
+
+	_, err = fault.NewFault(fault.Options{
+		Enabled:           true,
+		Injector:          ei,
+		PercentOfRequests: 1.0,
+		PathWhitelist:     []string{"/injecthere", "/andhere"},
+	})
+
+	fmt.Println(err)
+	// Output: <nil>
+}
+
 func ExampleNewChainInjector() {
 	si, err := fault.NewSlowInjector(time.Minute)
 	ri, err := fault.NewRejectInjector()

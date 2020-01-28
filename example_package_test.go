@@ -38,6 +38,7 @@ func Example() {
 		Enabled:           true,
 		Injector:          ci,
 		PercentOfRequests: 1.0,
+		PathBlacklist:     []string{"/ping", "/health"},
 	})
 	if err != nil {
 		log.Fatal(err)

@@ -30,6 +30,12 @@ func TestNewFault(t *testing.T) {
 				Enabled:           true,
 				Injector:          newTestInjector(false),
 				PercentOfRequests: 1.0,
+				PathBlacklist: []string{
+					"/donotinject",
+				},
+				PathWhitelist: []string{
+					"/faultenabled",
+				},
 			},
 			wantFault: &Fault{
 				opt: Options{
@@ -38,6 +44,18 @@ func TestNewFault(t *testing.T) {
 						resp500: false,
 					},
 					PercentOfRequests: 1.0,
+					PathBlacklist: []string{
+						"/donotinject",
+					},
+					PathWhitelist: []string{
+						"/faultenabled",
+					},
+				},
+				pathBlacklist: map[string]bool{
+					"/donotinject": true,
+				},
+				pathWhitelist: map[string]bool{
+					"/faultenabled": true,
 				},
 			},
 			wantErr: nil,
@@ -150,6 +168,92 @@ func TestFaultHandler(t *testing.T) {
 			},
 			wantCode: http.StatusInternalServerError,
 			wantBody: http.StatusText(http.StatusInternalServerError),
+		},
+		{
+			name: "100 percent 500s with blacklist root",
+			give: &Fault{
+				opt: Options{
+					Enabled: true,
+					Injector: &testInjector{
+						resp500: true,
+					},
+					PercentOfRequests: 1.0,
+					PathBlacklist: []string{
+						"/",
+					},
+				},
+				pathBlacklist: map[string]bool{
+					"/": true,
+				},
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "100 percent 500s with whitelist root",
+			give: &Fault{
+				opt: Options{
+					Enabled: true,
+					Injector: &testInjector{
+						resp500: true,
+					},
+					PercentOfRequests: 1.0,
+					PathWhitelist: []string{
+						"/",
+					},
+				},
+				pathWhitelist: map[string]bool{
+					"/": true,
+				},
+			},
+			wantCode: http.StatusInternalServerError,
+			wantBody: http.StatusText(http.StatusInternalServerError),
+		},
+		{
+			name: "100 percent 500s with whitelist other",
+			give: &Fault{
+				opt: Options{
+					Enabled: true,
+					Injector: &testInjector{
+						resp500: true,
+					},
+					PercentOfRequests: 1.0,
+					PathWhitelist: []string{
+						"/onlyinject",
+					},
+				},
+				pathWhitelist: map[string]bool{
+					"/onlyinject": true,
+				},
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "100 percent 500s with whitelist and blacklist root",
+			give: &Fault{
+				opt: Options{
+					Enabled: true,
+					Injector: &testInjector{
+						resp500: true,
+					},
+					PercentOfRequests: 1.0,
+					PathBlacklist: []string{
+						"/",
+					},
+					PathWhitelist: []string{
+						"/",
+					},
+				},
+				pathBlacklist: map[string]bool{
+					"/": true,
+				},
+				pathWhitelist: map[string]bool{
+					"/": true,
+				},
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
 		},
 		{
 			name: "100 percent",
