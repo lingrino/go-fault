@@ -99,9 +99,9 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 						shouldEvaluate = true
 					}
 				} else {
+					// If whitelist does not exist, evaluate
 					shouldEvaluate = true
 				}
-
 			}
 		}
 
