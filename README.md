@@ -4,7 +4,9 @@ The fault package provides go middleware that makes it easy to inject faults int
 
 ## Documentation
 
-For detailed package documentation and examples you can run `go doc` or run a godoc server locally by running `godoc -http=:6060` and then visiting <localhost:6060/pkg/github.com/github/go-fault/> (make sure you cloned into your $GOPATH) in your browser.
+
+
+For detailed package documentation and examples you can run `go doc` or run a godoc server locally by running `godoc -http=:6060` and then visiting <http://localhost:6060/pkg/github.com/github/go-fault/> (make sure you cloned into your $GOPATH) in your browser.
 
 ## Usage
 
