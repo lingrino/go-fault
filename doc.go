@@ -68,8 +68,8 @@ Blacklisting & Whitelisting Paths
 The fault.Options struct has PathBlacklist and PathWhitelist options. Any path you include in the
 PathBlacklist will never have faults run against in. For PathWhitelist, if you provide a non-empty
 list then faults will not be run against any paths except those specified in PathWhitelist. The
-PathBlacklist take priority over the PathWhitelist, a path in both lists will never have a fault
-run against it. The paths that you include must match exactly the path in req.URL.Path, including
+PathBlacklist take priority over the PathWhitelist, a path in both lists will never have a fault run
+against it. The paths that you include must match exactly the path in req.URL.Path, including
 leading and trailing slashes.
 
 Specifying very large lists of paths may cause memory or performace issues. If you're running into
