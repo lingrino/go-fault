@@ -79,6 +79,26 @@ func ExampleNewChainInjector() {
 	// Output: <nil>
 }
 
+func ExampleNewRandomInjector() {
+	si, err := fault.NewSlowInjector(time.Minute)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	ri, err := fault.NewRejectInjector()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = fault.NewRandomInjector(si, ri)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(err)
+	// Output: <nil>
+}
+
 func ExampleNewRejectInjector() {
 	_, err := fault.NewRejectInjector()
 	if err != nil {
