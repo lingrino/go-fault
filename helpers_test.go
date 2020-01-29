@@ -13,14 +13,14 @@ const (
 	testHandlerBody = "Accepted"
 )
 
-// testHandler is the main handler that runs on our request.
-var testHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-	http.Error(w, testHandlerBody, testHandlerCode)
-})
-
 // testRequest simulates a request with the provided Fault injected.
 func testRequest(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 	t.Helper()
+
+	// testHandler is the main handler that runs on our request.
+	var testHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		http.Error(w, testHandlerBody, testHandlerCode)
+	})
 
 	req := httptest.NewRequest("GET", "/", nil)
 	rr := httptest.NewRecorder()

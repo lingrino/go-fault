@@ -507,14 +507,12 @@ func TestChainInjectorHandler(t *testing.T) {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 							w.WriteHeader(http.StatusOK)
 							fmt.Fprint(w, "one")
-							return
 						})
 					},
 					func(next http.Handler) http.Handler {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 							w.WriteHeader(http.StatusOK)
 							fmt.Fprint(w, "two")
-							return
 						})
 					},
 				},
@@ -537,7 +535,6 @@ func TestChainInjectorHandler(t *testing.T) {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 							w.WriteHeader(http.StatusOK)
 							fmt.Fprint(w, "two")
-							return
 						})
 					},
 				},
@@ -860,7 +857,6 @@ func TestNewErrorInjector(t *testing.T) {
 
 			assert.Equal(t, tt.wantErr, err)
 			assert.Equal(t, tt.want, i)
-
 		})
 	}
 }

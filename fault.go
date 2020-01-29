@@ -34,12 +34,12 @@ type Options struct {
 	// Enabled determines if the fault middleware should evaluate.
 	Enabled bool
 
-	// Injector is the interface that returns the handler we will inject.
-	Injector Injector
-
 	// PercentOfRequests is the percent of requests that should have the fault injected. 0.0 <=
 	// percent <= 1.0
 	PercentOfRequests float32
+
+	// Injector is the interface that returns the handler we will inject.
+	Injector Injector
 
 	// PathBlacklist is a list of paths for which faults will never be injected
 	PathBlacklist []string
