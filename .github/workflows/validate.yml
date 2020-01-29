@@ -1,9 +1,9 @@
-name: test
+name: Validate
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
-  test:
+  validate:
     strategy:
       matrix:
         os: [ubuntu-latest]
