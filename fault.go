@@ -20,12 +20,12 @@ var (
 type Fault struct {
 	opt Options
 
-	// pathBlacklist is a dict representation of Options.PathBlacklist
-	// that is populated in NewFault and used to make path lookups faster
+	// pathBlacklist is a dict representation of Options.PathBlacklist that is populated in
+	// NewFault and used to make path lookups faster
 	pathBlacklist map[string]bool
 
-	// pathWhitelist is a dict representation of Options.PathWhitelist
-	// that is populated in NewFault and used to make path lookups faster
+	// pathWhitelist is a dict representation of Options.PathWhitelist that is populated in
+	// NewFault and used to make path lookups faster
 	pathWhitelist map[string]bool
 }
 
@@ -37,15 +37,15 @@ type Options struct {
 	// Injector is the interface that returns the handler we will inject.
 	Injector Injector
 
-	// PercentOfRequests is the percent of requests that should have the fault injected.
-	// 0.0 <= percent <= 1.0
+	// PercentOfRequests is the percent of requests that should have the fault injected. 0.0 <=
+	// percent <= 1.0
 	PercentOfRequests float32
 
 	// PathBlacklist is a list of paths for which faults will never be injected
 	PathBlacklist []string
 
-	// PathWhitelist is a list of paths for which faults will be evaluated. If PathWhitelist
-	// is empty then faults will evaluate on all paths.
+	// PathWhitelist is a list of paths for which faults will be evaluated. If PathWhitelist is
+	// empty then faults will evaluate on all paths.
 	PathWhitelist []string
 }
 
@@ -85,8 +85,8 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var shouldEvaluate bool
 
-		// By default faults should not evaluate. Here we go through conditions where
-		// faults will evaluate, if everything is configured correctly
+		// By default faults should not evaluate. Here we go through conditions where faults
+		// will evaluate, if everything is configured correctly
 
 		// f.opt.Enabled is the first check, to prioritize speed when faults are disabled
 		if f.opt.Enabled && f.opt.Injector != nil {
@@ -138,8 +138,8 @@ type ChainInjector struct {
 	middlewares []func(next http.Handler) http.Handler
 }
 
-// NewChainInjector combines many injectors into a single chain injector. In a chain injector
-// the Handler() for each injector will execute in the order provided.
+// NewChainInjector combines many injectors into a single chain injector. In a chain injector the
+// Handler() for each injector will execute in the order provided.
 func NewChainInjector(is ...Injector) (*ChainInjector, error) {
 	chainInjector := &ChainInjector{}
 	for _, i := range is {
@@ -174,8 +174,8 @@ func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
 	return RandomInjector, nil
 }
 
-// RandomInjector combines many injectors into a single injector. When the random injector
-// is called it randomly runs one of the provided injectors.
+// RandomInjector combines many injectors into a single injector. When the random injector is called
+// it randomly runs one of the provided injectors.
 type RandomInjector struct {
 	randF       func(int) int
 	middlewares []func(next http.Handler) http.Handler
