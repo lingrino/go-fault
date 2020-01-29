@@ -71,7 +71,6 @@ func (i *testInjector) Handler(next http.Handler) http.Handler {
 	if i.resp500 {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, http.StatusText(500), 500)
-			return
 		})
 	}
 	return next

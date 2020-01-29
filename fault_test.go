@@ -468,7 +468,6 @@ func TestChainInjectorHandler(t *testing.T) {
 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 							w.WriteHeader(http.StatusNoContent)
 							fmt.Fprint(w, "one")
-							return
 						})
 					},
 				},
@@ -1024,7 +1023,7 @@ func TestSlowInjectorHandler(t *testing.T) {
 			name: "valid",
 			give: &SlowInjector{
 				duration: time.Millisecond,
-				sleep:    func(d time.Duration) { return },
+				sleep:    func(d time.Duration) {},
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
