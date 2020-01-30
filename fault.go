@@ -21,11 +21,11 @@ type Fault struct {
 	opt Options
 
 	// pathBlacklist is a dict representation of Options.PathBlacklist that is populated in
-	// NewFault and used to make path lookups faster
+	// NewFault and used to make path lookups faster.
 	pathBlacklist map[string]bool
 
 	// pathWhitelist is a dict representation of Options.PathWhitelist that is populated in
-	// NewFault and used to make path lookups faster
+	// NewFault and used to make path lookups faster.
 	pathWhitelist map[string]bool
 }
 
@@ -76,6 +76,9 @@ func NewFault(o Options) (*Fault, error) {
 	}
 
 	output.opt = o
+
+	// Seed rand for f.percentDo
+	rand.Seed(time.Now().UnixNano())
 
 	return output, nil
 }
@@ -162,9 +165,17 @@ func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 	})
 }
 
+// RandomInjector combines many injectors into a single injector. When the random injector is called
+// it randomly runs one of the provided injectors.
+type RandomInjector struct {
+	randF       func(int) int
+	middlewares []func(next http.Handler) http.Handler
+}
+
 // NewRandomInjector combines many injectors into a single random injector. When the random injector
 // is called it randomly runs one of the provided injectors.
 func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
+	rand.Seed(time.Now().UnixNano())
 	RandomInjector := &RandomInjector{randF: rand.Intn}
 
 	for _, i := range is {
@@ -172,13 +183,6 @@ func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
 	}
 
 	return RandomInjector, nil
-}
-
-// RandomInjector combines many injectors into a single injector. When the random injector is called
-// it randomly runs one of the provided injectors.
-type RandomInjector struct {
-	randF       func(int) int
-	middlewares []func(next http.Handler) http.Handler
 }
 
 // Handler executes a random injector from RandomInjector.middlewares
