@@ -4,7 +4,9 @@ The fault package provides go middleware that makes it easy to inject faults int
 
 ## Documentation
 
-For detailed package documentation and examples you can run `go doc` or run a godoc server locally by running `godoc -http=:6060` and then visiting <localhost:6060/pkg/github.com/github/go-fault/> (make sure you cloned into your $GOPATH) in your browser.
+
+
+For detailed package documentation and examples you can run `go doc` or run a godoc server locally by running `godoc -http=:6060` and then visiting <http://localhost:6060/pkg/github.com/github/go-fault/> (make sure you cloned into your $GOPATH) in your browser.
 
 ## Usage
 
@@ -28,6 +30,7 @@ func main() {
                 Enabled:           true,
                 Injector:          slowInjector,
                 PercentOfRequests: 0.25,
+                PathBlacklist:     []string{"/ping", "/health"},
         })
 
         // Add 2 seconds of latency to 25% of our requests
@@ -73,3 +76,4 @@ The package is mostly implemented, however breaking API changes may still happen
 - Option to enable statsd exporting
 - Option to always run faults if a certain header is passed
 - Option to slow requests in a random distribution instead of a fixed value
+- Writing information about the injected faults to the request context

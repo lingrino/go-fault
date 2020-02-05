@@ -48,6 +48,12 @@ SlowInjector
 Use fault.SlowInjector to wait a configured time.Duration before proceeding with the request as
 normal. For example, you can use the SlowInjector to add a 10ms delay to your incoming requests.
 
+RandomInjector
+
+Use fault.RandomInjector to random choose one of the above faults to inject. Pass a list of Injector
+to fault.NewRandomInjector and when RandomInjector is evaluated it will randomly insert on of the
+injectors that you passed.
+
 Combining Faults
 
 It is easy to combine any of the Injectors into a chained action. There are two ways you might want
@@ -62,6 +68,19 @@ rejected. You want these Faults to depend on each other. For this use the specia
 which consolidates any number of Injectors into a single Injector that runs each of the provided
 Injectors sequentially. When you add the ChainInjector to a Fault the entire chain will always
 execute together.
+
+Blacklisting & Whitelisting Paths
+
+The fault.Options struct has PathBlacklist and PathWhitelist options. Any path you include in the
+PathBlacklist will never have faults run against in. For PathWhitelist, if you provide a non-empty
+list then faults will not be run against any paths except those specified in PathWhitelist. The
+PathBlacklist take priority over the PathWhitelist, a path in both lists will never have a fault run
+against it. The paths that you include must match exactly the path in req.URL.Path, including
+leading and trailing slashes.
+
+Specifying very large lists of paths may cause memory or performance issues. If you're running into
+these problems you should instead consider using your http router to enable the middleware on only a
+subset of your routes.
 
 Custom Injectors
 
