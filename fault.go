@@ -1,44 +1,14 @@
 package fault
 
 import (
-	"errors"
 	"math/rand"
 	"net/http"
 	"time"
 )
 
-// ContextString is the type that all of our context keys will be
-type ContextString string
-
-// ContextValue is the value defined by ContextKey. It is a list of ContextString
-// that will be added by Injectors
-type ContextValue []ContextString
-
-const (
-	// ContextKey will be added to the request context of any injetor that does not return immediately
-	// (ex: SlowInjector) and the value will be ContextValue, a list of ContextString that describe what
-	// fault occurred.
-	ContextKey ContextString = "fault-injected"
-	// ContextValueError is added to ContextValue when an error (ex: misconfiguration)
-	// occurred while trying to inject a fault
-	ContextValueError ContextString = "fault-error"
-	// ContextValueDisabled is added to ContextValue when the fault is disabled
-	ContextValueDisabled ContextString = "fault-disabled"
-	// ContextValueSlowInjector is added to ContextValue when the SlowInjector is injected
-	ContextValueSlowInjector ContextString = "slow-injector"
-)
-
-var (
-	// ErrNilInjector returns when a nil Injector type is passed.
-	ErrNilInjector = errors.New("injector cannot be nil")
-	// ErrInvalidPercent returns when a provided percent is outside of the allowed bounds.
-	ErrInvalidPercent = errors.New("percent must be 0.0 <= percent <= 1.0")
-	// ErrInvalidHTTPCode returns when an invalid http status code is provided.
-	ErrInvalidHTTPCode = errors.New("not a valid http status code")
-)
-
 // Fault is the main struct and combines an Injector with configuration.
 type Fault struct {
+	// opt holds all of our user provided fault options
 	opt Options
 
 	// pathBlacklist is a dict representation of Options.PathBlacklist that is populated in
@@ -127,12 +97,14 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 					shouldEvaluate = true
 				}
 			}
+		} else {
+			r = updateRequestContextValue(r, ContextValueDisabled)
 		}
 
 		if shouldEvaluate && f.percentDo() {
-			f.opt.Injector.Handler(next).ServeHTTP(w, r)
+			f.opt.Injector.Handler(next).ServeHTTP(w, updateRequestContextValue(r, ContextValueInjected))
 		} else {
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSkipped))
 		}
 	})
 }
@@ -177,6 +149,8 @@ func NewChainInjector(is ...Injector) (*ChainInjector, error) {
 func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
+			r = updateRequestContextValue(r, ContextValueChainInjector)
+
 			// Loop in reverse to preserve handler order
 			for idx := len(i.middlewares) - 1; idx >= 0; idx-- {
 				next = i.middlewares[idx](next)
@@ -210,6 +184,7 @@ func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
 func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil && len(i.middlewares) > 0 {
+			r = updateRequestContextValue(r, ContextValueRandomInjector)
 			i.middlewares[i.randF(len(i.middlewares))](next).ServeHTTP(w, r)
 		} else {
 			next.ServeHTTP(w, r)
