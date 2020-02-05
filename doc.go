@@ -48,6 +48,12 @@ SlowInjector
 Use fault.SlowInjector to wait a configured time.Duration before proceeding with the request as
 normal. For example, you can use the SlowInjector to add a 10ms delay to your incoming requests.
 
+RandomInjector
+
+Use fault.RandomInjector to random choose one of the above faults to inject. Pass a list of Injector
+to fault.NewRandomInjector and when RandomInjector is evaluated it will randomly insert on of the
+injectors that you passed.
+
 Combining Faults
 
 It is easy to combine any of the Injectors into a chained action. There are two ways you might want

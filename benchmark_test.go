@@ -8,17 +8,14 @@ import (
 	"github.com/github/go-fault"
 )
 
-// result should be set to avoid compiler optimizations.
-var result *httptest.ResponseRecorder
-
-// benchmarkHandler is the main handler that runs on our request.
-var benchmarkHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "OK", http.StatusOK)
-})
-
 // benchmarkRequest simulates a request with the provided Fault injected.
 func benchmarkRequest(b *testing.B, f *fault.Fault) *httptest.ResponseRecorder {
 	b.Helper()
+
+	// benchmarkHandler is the main handler that runs on our request.
+	var benchmarkHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "OK", http.StatusOK)
+	})
 
 	// If we instead use httptest.NewRequest here our benchmark times will approximately double.
 	req, _ := http.NewRequest("GET", "/", nil)
@@ -42,7 +39,7 @@ func runBenchmark(b *testing.B, f *fault.Fault) {
 		rr = benchmarkRequest(b, f)
 	}
 
-	result = rr
+	_ = rr
 }
 
 // BenchmarkNoFault is our control with no Fault injected.

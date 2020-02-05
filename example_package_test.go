@@ -10,10 +10,6 @@ import (
 	"github.com/github/go-fault"
 )
 
-var mainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "OK", http.StatusOK)
-})
-
 func Example() {
 	// Wait one millisecond then continue
 	si, err := fault.NewSlowInjector(time.Millisecond)
@@ -43,6 +39,10 @@ func Example() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	var mainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "OK", http.StatusOK)
+	})
 
 	// Insert our middleware before the mainHandler
 	handlerChain := f.Handler((mainHandler))
