@@ -77,9 +77,6 @@ func NewFault(o Options) (*Fault, error) {
 
 	output.opt = o
 
-	// Seed rand for f.percentDo
-	rand.Seed(time.Now().UnixNano())
-
 	return output, nil
 }
 
