@@ -196,7 +196,7 @@ func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
 	RandomInjector := &RandomInjector{}
 
 	RandomInjector.rand = rand.New(rand.NewSource(defaultRandSeed))
-	RandomInjector.randF = rand.Intn
+	RandomInjector.randF = RandomInjector.rand.Intn
 
 	for _, i := range is {
 		RandomInjector.middlewares = append(RandomInjector.middlewares, i.Handler)
