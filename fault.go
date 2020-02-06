@@ -7,6 +7,11 @@ import (
 	"time"
 )
 
+const (
+	// defaultRandSeed is used when a random seed is not set explicitly
+	defaultRandSeed = 1
+)
+
 var (
 	// ErrNilInjector returns when a nil Injector type is passed.
 	ErrNilInjector = errors.New("injector cannot be nil")
@@ -27,6 +32,9 @@ type Fault struct {
 	// pathWhitelist is a dict representation of Options.PathWhitelist that is populated in
 	// NewFault and used to make path lookups faster.
 	pathWhitelist map[string]bool
+
+	// randSeed is used to seed our random number generator
+	rand *rand.Rand
 }
 
 // Options holds configuration for a Fault.
@@ -47,6 +55,10 @@ type Options struct {
 	// PathWhitelist is a list of paths for which faults will be evaluated. If PathWhitelist is
 	// empty then faults will evaluate on all paths.
 	PathWhitelist []string
+
+	// RandSeed is a number to seed our random gnerator with. Only applies to Fault randomness,
+	// not randomness used by injectors.
+	RandSeed int64
 }
 
 // NewFault validates the provided options and returns a Fault struct.
@@ -73,6 +85,13 @@ func NewFault(o Options) (*Fault, error) {
 		for _, path := range o.PathWhitelist {
 			output.pathWhitelist[path] = true
 		}
+	}
+
+	// We assume that 0 is unspecified
+	if o.RandSeed != 0 {
+		output.rand = rand.New(rand.NewSource(o.RandSeed))
+	} else {
+		output.rand = rand.New(rand.NewSource(defaultRandSeed))
 	}
 
 	output.opt = o
@@ -118,7 +137,7 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 func (f *Fault) percentDo() bool {
 	var proceed bool
 
-	rn := rand.Float32()
+	rn := f.rand.Float32()
 	if rn < f.opt.PercentOfRequests && f.opt.PercentOfRequests <= 1.0 {
 		return true
 	}
@@ -165,20 +184,30 @@ func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 // RandomInjector combines many injectors into a single injector. When the random injector is called
 // it randomly runs one of the provided injectors.
 type RandomInjector struct {
-	randF       func(int) int
 	middlewares []func(next http.Handler) http.Handler
+
+	rand  *rand.Rand
+	randF func(int) int
 }
 
 // NewRandomInjector combines many injectors into a single random injector. When the random injector
 // is called it randomly runs one of the provided injectors.
 func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
-	RandomInjector := &RandomInjector{randF: rand.Intn}
+	RandomInjector := &RandomInjector{}
+
+	RandomInjector.rand = rand.New(rand.NewSource(defaultRandSeed))
+	RandomInjector.randF = rand.Intn
 
 	for _, i := range is {
 		RandomInjector.middlewares = append(RandomInjector.middlewares, i.Handler)
 	}
 
 	return RandomInjector, nil
+}
+
+// SetRandSeed sets the random seed for RandomInjector to a non-default value
+func (i *RandomInjector) SetRandSeed(s int64) {
+	i.rand = rand.New(rand.NewSource(s))
 }
 
 // Handler executes a random injector from RandomInjector.middlewares
