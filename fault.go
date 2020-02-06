@@ -172,7 +172,6 @@ type RandomInjector struct {
 // NewRandomInjector combines many injectors into a single random injector. When the random injector
 // is called it randomly runs one of the provided injectors.
 func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
-	rand.Seed(time.Now().UnixNano())
 	RandomInjector := &RandomInjector{randF: rand.Intn}
 
 	for _, i := range is {
