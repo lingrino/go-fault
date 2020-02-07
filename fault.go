@@ -1,8 +1,16 @@
 package fault
 
 import (
+	"errors"
 	"math/rand"
 	"net/http"
+)
+
+var (
+	// ErrNilInjector returns when a nil Injector type is passed.
+	ErrNilInjector = errors.New("injector cannot be nil")
+	// ErrInvalidPercent returns when a provided percent is outside of the allowed bounds.
+	ErrInvalidPercent = errors.New("percent must be 0.0 <= percent <= 1.0")
 )
 
 // Fault is the main struct and combines an Injector with configuration.
