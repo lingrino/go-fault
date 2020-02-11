@@ -13,7 +13,7 @@ type ContextString string
 type ContextValue []ContextString
 
 const (
-	// ContextKey will be added to the request context of any injetor that evaluates and the
+	// ContextKey will be added to the request context of any injector that evaluates and the
 	// value will be ContextValue, a list of ContextString that describe what fault occurred.
 	ContextKey ContextString = "fault"
 	// ContextValueError is added to ContextValue when an error (ex: misconfiguration) occurred
