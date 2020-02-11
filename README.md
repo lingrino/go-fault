@@ -76,4 +76,3 @@ The package is mostly implemented, however breaking API changes may still happen
 - Option to enable statsd exporting
 - Option to always run faults if a certain header is passed
 - Option to slow requests in a random distribution instead of a fixed value
-- Writing information about the injected faults to the request context
