@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestUpdateRequestContextValue tests updateRequestContextValue in isolation.
 func TestUpdateRequestContextValue(t *testing.T) {
 	t.Parallel()
 
@@ -75,6 +76,7 @@ func TestUpdateRequestContextValue(t *testing.T) {
 	}
 }
 
+// TestUpdateRequestContextValue_WithHandler tests updateRequestContextValue within a handler.
 func TestUpdateRequestContextValue_WithHandler(t *testing.T) {
 	t.Parallel()
 
