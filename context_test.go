@@ -3,6 +3,7 @@ package fault
 import (
 	"context"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -70,6 +71,62 @@ func TestUpdateRequestContextValue(t *testing.T) {
 				gotCtx := req.Context().Value(ContextKey)
 				assert.Equal(t, tt.wantCtxList, gotCtx)
 			}
+		})
+	}
+}
+
+func TestUpdateRequestContextValue_WithHandler(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		giveHandler func(http.Handler) http.Handler
+		wantCtxList ContextValue
+	}{
+		{
+			name: "inline update",
+			giveHandler: func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					next.ServeHTTP(w, updateRequestContextValue(r, ContextValueInjected))
+				})
+			},
+			wantCtxList: ContextValue{ContextValueInjected},
+		},
+		{
+			name: "assign before",
+			giveHandler: func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					r = updateRequestContextValue(r, ContextValueInjected)
+					next.ServeHTTP(w, r)
+				})
+			},
+			wantCtxList: ContextValue{ContextValueInjected},
+		},
+		{
+			name: "multiple",
+			giveHandler: func(next http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					r = updateRequestContextValue(r, ContextValueInjected)
+					r = updateRequestContextValue(r, ContextValueSkipped)
+					next.ServeHTTP(w, r)
+				})
+			},
+			wantCtxList: ContextValue{ContextValueInjected, ContextValueSkipped},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctxVerifier := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, tt.wantCtxList, r.Context().Value(ContextKey))
+			})
+
+			chain := tt.giveHandler(ctxVerifier)
+
+			chain.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest("GET", "/", nil))
 		})
 	}
 }
