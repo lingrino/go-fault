@@ -314,6 +314,54 @@ func TestNewRandomInjector(t *testing.T) {
 	}
 }
 
+// TestRandomInjectorSetRandSeed tests RandomInjector.SetRandSeed.
+func TestRandomInjectorSetRandSeed(t *testing.T) {
+	t.Parallel()
+
+	// verify the correct seed by validating against the first 10 numbers. The input
+	// will be, sequentially, 1-10
+	tests := []struct {
+		name string
+		give int64
+		want [10]int
+	}{
+		{
+			name: "default",
+			give: defaultRandSeed,
+			want: [10]int{0, 1, 2, 3, 1, 0, 3, 4, 4, 0},
+		},
+		{
+			name: "234325",
+			give: 234325,
+			want: [10]int{0, 1, 2, 3, 2, 2, 4, 4, 6, 6},
+		},
+		{
+			name: "999999999999999999",
+			give: 999999999999999999,
+			want: [10]int{0, 0, 2, 0, 1, 1, 2, 6, 8, 4},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ri, err := NewRandomInjector()
+			assert.NoError(t, err)
+
+			ri.SetRandSeed(tt.give)
+
+			res := [10]int{}
+			for i := range tt.want {
+				res[i] = ri.randF(i + 1)
+			}
+
+			assert.Equal(t, tt.want, res)
+		})
+	}
+}
+
 // TestRandomInjectorHandler tests RandomInjector.Handler.
 func TestRandomInjectorHandler(t *testing.T) {
 	t.Parallel()

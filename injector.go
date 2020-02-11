@@ -75,6 +75,7 @@ func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
 // SetRandSeed sets the random seed for RandomInjector to a non-default value
 func (i *RandomInjector) SetRandSeed(s int64) {
 	i.rand = rand.New(rand.NewSource(s))
+	i.randF = i.rand.Intn
 }
 
 // Handler executes a random injector from RandomInjector.middlewares
