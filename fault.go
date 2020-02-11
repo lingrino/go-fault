@@ -20,6 +20,7 @@ var (
 
 // Fault is the main struct and combines an Injector with configuration.
 type Fault struct {
+	// opt holds all of our user provided fault options
 	opt Options
 
 	// pathBlacklist is a dict representation of Options.PathBlacklist that is populated in
@@ -119,12 +120,14 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 					shouldEvaluate = true
 				}
 			}
+		} else {
+			r = updateRequestContextValue(r, ContextValueDisabled)
 		}
 
 		if shouldEvaluate && f.percentDo() {
-			f.opt.Injector.Handler(next).ServeHTTP(w, r)
+			f.opt.Injector.Handler(next).ServeHTTP(w, updateRequestContextValue(r, ContextValueInjected))
 		} else {
-			next.ServeHTTP(w, r)
+			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSkipped))
 		}
 	})
 }

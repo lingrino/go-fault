@@ -40,7 +40,7 @@ linters:
     - varcheck
     - whitespace
   disable:
-    - wsl # too strict
+    - wsl        # too strict
     - interfacer # deprecated
 
 linters-settings:
@@ -58,6 +58,6 @@ issues:
   exclude-rules:
     - path: _test.go
       linters:
-        - dupl # many functions in tests look like duplicates
+        - dupl   # many functions in tests look like duplicates
         - funlen # test function can be very long due to test cases
-        - gomnd # there are many magic numbers in tests
+        - gomnd  # there are many magic numbers in tests

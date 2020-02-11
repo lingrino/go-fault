@@ -69,6 +69,14 @@ which consolidates any number of Injectors into a single Injector that runs each
 Injectors sequentially. When you add the ChainInjector to a Fault the entire chain will always
 execute together.
 
+Context Values
+
+The Fault and Injector types are set up to add informational context strings to the request context,
+contained in a list with the key fault.ContextKey. The value of that key is a fault.ContextValue
+([]ContextString). Once a fault has run you can inspect r.Context().Value(ContextKey) in middleware
+further down the chain to observe how the fault was evaluated. For example, ContextValue will
+contain ContextString like ContextValueInjected or ContextValueSkipped.
+
 Blacklisting & Whitelisting Paths
 
 The fault.Options struct has PathBlacklist and PathWhitelist options. Any path you include in the
