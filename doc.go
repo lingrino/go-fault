@@ -97,6 +97,14 @@ Injector. Use custom injectors to add additional logic (logging, stats) to the p
 injectors or to create your own completely new Injector that can still be managed by the Fault
 struct.
 
+Random Seeds
+
+By default all randomness is seeded with defaultRandSeed, which is 1, the same default as math/rand.
+This helps you reproduce any errors you see when running an Injector. If you prefer, you can also
+customize the seed for each random generator. To customize the fault.Fault seed pass a number to
+fault.Options.RandSeed. To customize the RandomInjector seed first initialize it with
+NewRandomInjector() and then use ri.SetRandSeed(int64).
+
 Configuration
 
 All configuration for the fault package is done through the Options struct. There is no other way to
