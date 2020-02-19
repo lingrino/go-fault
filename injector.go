@@ -16,12 +16,14 @@ var (
 // Faults handle running the Injector the correct percent of the time.
 type Injector interface {
 	Handler(next http.Handler) http.Handler
+	SetReporter(Reporter)
 }
 
 // ChainInjector combines many injectors into a single chain injector. In a chain injector the
 // Handler func will execute ChainInjector.middlewares in order and then returns.
 type ChainInjector struct {
 	middlewares []func(next http.Handler) http.Handler
+	reporter    Reporter
 }
 
 // NewChainInjector combines many injectors into a single chain injector. In a chain injector the
@@ -38,6 +40,7 @@ func NewChainInjector(is ...Injector) (*ChainInjector, error) {
 // Handler executes ChainInjector.middlewares in order and then returns.
 func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		i.reporter.Report(r)
 		if i != nil {
 			r = updateRequestContextValue(r, ContextValueChainInjector)
 
@@ -50,11 +53,16 @@ func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 	})
 }
 
+func (i *ChainInjector) SetReporter(r Reporter) {
+	i.reporter = r
+}
+
 // RandomInjector combines many injectors into a single injector. When the random injector is called
 // it randomly runs one of the provided injectors.
 type RandomInjector struct {
 	randF       func(int) int
 	middlewares []func(next http.Handler) http.Handler
+	reporter    Reporter
 }
 
 // NewRandomInjector combines many injectors into a single random injector. When the random injector
@@ -81,8 +89,14 @@ func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	})
 }
 
+func (i *RandomInjector) SetReporter(r Reporter) {
+	i.reporter = r
+}
+
 // RejectInjector immediately sends back an empty response.
-type RejectInjector struct{}
+type RejectInjector struct {
+	reporter Reporter
+}
 
 // NewRejectInjector returns a RejectInjector struct.
 func NewRejectInjector() (*RejectInjector, error) {
@@ -99,11 +113,16 @@ func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 	})
 }
 
+func (i *RejectInjector) SetReporter(r Reporter) {
+	i.reporter = r
+}
+
 // ErrorInjector immediately responds with an http status code and the error message associated with
 // that code.
 type ErrorInjector struct {
 	statusCode int
 	statusText string
+	reporter   Reporter
 }
 
 // NewErrorInjector returns an ErrorInjector that reponds with the configured status code.
@@ -133,9 +152,14 @@ func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 	})
 }
 
+func (i *ErrorInjector) SetReporter(r Reporter) {
+	i.reporter = r
+}
+
 // SlowInjector sleeps a specified duration and then continues the request. Simulates latency.
 type SlowInjector struct {
 	duration time.Duration
+	reporter Reporter
 	sleep    func(t time.Duration)
 }
 
@@ -157,4 +181,8 @@ func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 		}
 		next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSlowInjector))
 	})
+}
+
+func (i *SlowInjector) SetReporter(r Reporter) {
+	i.reporter = r
 }

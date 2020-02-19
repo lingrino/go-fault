@@ -56,7 +56,8 @@ func testRequestExpectPanic(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 // testInjector is a simple Injector used for running tests. By default testInjector just passes on
 // the request but if you set resp500 to true then it will instead return a 500.
 type testInjector struct {
-	resp500 bool
+	resp500  bool
+	reporter Reporter
 }
 
 // newTestInjector creates a new testInjector struct.
@@ -74,4 +75,8 @@ func (i *testInjector) Handler(next http.Handler) http.Handler {
 		})
 	}
 	return next
+}
+
+func (i *testInjector) SetReporter(r Reporter) {
+	i.reporter = r
 }

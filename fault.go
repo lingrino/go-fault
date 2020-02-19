@@ -113,6 +113,10 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 	})
 }
 
+func (f *Fault) SetReporter(r Reporter) {
+	f.opt.Injector.SetReporter(r)
+}
+
 // percentDo takes a percent (0.0 <= per <= 1.0) and randomly returns true that percent of the time.
 // Numbers provided outside of [0.0,1.0] will always return false.
 func (f *Fault) percentDo() bool {
