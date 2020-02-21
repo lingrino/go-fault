@@ -45,6 +45,10 @@ type Options struct {
 	// PathWhitelist is a list of paths for which faults will be evaluated. If PathWhitelist is
 	// empty then faults will evaluate on all paths.
 	PathWhitelist []string
+
+	// Reporter is an interface that receives fault event data at Reporter.Report and can act on
+	// that data. By default we do not report on events and Reporter is nil.
+	Reporter Reporter
 }
 
 // NewFault validates the provided options and returns a Fault struct.
@@ -114,6 +118,7 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 }
 
 func (f *Fault) SetReporter(r Reporter) {
+	f.opt.Reporter = r
 	f.opt.Injector.SetReporter(r)
 }
 
