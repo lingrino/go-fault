@@ -8,7 +8,7 @@ import (
 // Reporter receives event data from injected faults to use for logging, stats, and other custom
 // reporting.
 type Reporter interface {
-	Report(ReportInput)
+	Report(*ReportInput)
 }
 
 // ReportInput holds all relevant event data for Reporter.Report
@@ -24,9 +24,24 @@ type ReportInput struct {
 // stats reporting.
 type DefaultReporter struct{}
 
+// NewDefaultReporter returns a new DefaultReporter
+func NewDefaultReporter() *DefaultReporter {
+	return &DefaultReporter{}
+}
+
 // Report simply logs the input message using the standard go logger
 func (r *DefaultReporter) Report(i ReportInput) {
 	if r != nil {
 		log.Println(i.Msg)
+	}
+}
+
+// reportWithMessage is a helper function to simplify sending simple messages
+func reportWithMessage(r Reporter, req *http.Request, msg string) {
+	if r != nil {
+		r.Report(&ReportInput{
+			Req: req,
+			Msg: msg,
+		})
 	}
 }

@@ -40,8 +40,8 @@ func NewChainInjector(is ...Injector) (*ChainInjector, error) {
 // Handler executes ChainInjector.middlewares in order and then returns.
 func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		i.reporter.Report(r)
 		if i != nil {
+			reportWithMessage(i.reporter, r, "chain injector: starting")
 			r = updateRequestContextValue(r, ContextValueChainInjector)
 
 			// Loop in reverse to preserve handler order
@@ -81,6 +81,7 @@ func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
 func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil && len(i.middlewares) > 0 {
+			reportWithMessage(i.reporter, r, "random injector: starting")
 			r = updateRequestContextValue(r, ContextValueRandomInjector)
 			i.middlewares[i.randF(len(i.middlewares))](next).ServeHTTP(w, r)
 		} else {
@@ -106,6 +107,8 @@ func NewRejectInjector() (*RejectInjector, error) {
 // Handler immediately rejects the request, returning an empty response.
 func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		reportWithMessage(i.reporter, r, "reject injector: starting")
+
 		// This is a specialized and documented way of sending an interrupted response to
 		// the client without printing the panic stack trace or erroring.
 		// https://golang.org/pkg/net/http/#Handler
@@ -143,6 +146,8 @@ func NewErrorInjector(code int) (*ErrorInjector, error) {
 func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
+			reportWithMessage(i.reporter, r, "error injector: starting")
+
 			if http.StatusText(i.statusCode) != "" {
 				http.Error(w, i.statusText, i.statusCode)
 				return
@@ -176,6 +181,7 @@ func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
 			if i.sleep != nil {
+				reportWithMessage(i.reporter, r, "slow injector: starting")
 				i.sleep(i.duration)
 			}
 		}
