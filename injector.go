@@ -41,13 +41,15 @@ func NewChainInjector(is ...Injector) (*ChainInjector, error) {
 func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
-			reportWithMessage(i.reporter, r, "chain injector: starting")
+			reportWithMessage(i.reporter, r, "chain injector: started")
 			r = updateRequestContextValue(r, ContextValueChainInjector)
 
 			// Loop in reverse to preserve handler order
 			for idx := len(i.middlewares) - 1; idx >= 0; idx-- {
 				next = i.middlewares[idx](next)
 			}
+
+			reportWithMessage(i.reporter, r, "chain injector: finished chain")
 		}
 		next.ServeHTTP(w, r)
 	})
@@ -81,7 +83,7 @@ func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
 func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil && len(i.middlewares) > 0 {
-			reportWithMessage(i.reporter, r, "random injector: starting")
+			reportWithMessage(i.reporter, r, "random injector: started")
 			r = updateRequestContextValue(r, ContextValueRandomInjector)
 			i.middlewares[i.randF(len(i.middlewares))](next).ServeHTTP(w, r)
 		} else {
@@ -108,7 +110,7 @@ func NewRejectInjector() (*RejectInjector, error) {
 func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
-			reportWithMessage(i.reporter, r, "reject injector: starting")
+			reportWithMessage(i.reporter, r, "reject injector: started")
 		}
 
 		// This is a specialized and documented way of sending an interrupted response to
@@ -148,7 +150,7 @@ func NewErrorInjector(code int) (*ErrorInjector, error) {
 func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
-			reportWithMessage(i.reporter, r, "error injector: starting")
+			reportWithMessage(i.reporter, r, "error injector: started")
 
 			if http.StatusText(i.statusCode) != "" {
 				http.Error(w, i.statusText, i.statusCode)
@@ -181,13 +183,15 @@ func NewSlowInjector(d time.Duration) (*SlowInjector, error) {
 // Handler waits the configured duration and then continues the request.
 func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if i != nil {
-			if i.sleep != nil {
-				reportWithMessage(i.reporter, r, "slow injector: starting")
-				i.sleep(i.duration)
-			}
+		if i != nil && i.sleep != nil {
+			reportWithMessage(i.reporter, r, "slow injector: started")
+			i.sleep(i.duration)
+			reportWithMessage(i.reporter, r, "slow injector: finished")
+
+			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSlowInjector))
+		} else {
+			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSkipped))
 		}
-		next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSlowInjector))
 	})
 }
 

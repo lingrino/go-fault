@@ -86,7 +86,6 @@ func NewFault(o Options) (*Fault, error) {
 func (f *Fault) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var shouldEvaluate bool
-		reportWithMessage(f.opt.Reporter, r, "fault: starting")
 
 		// By default faults should not evaluate. Here we go through conditions where faults
 		// will evaluate, if everything is configured correctly
@@ -111,8 +110,10 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 		}
 
 		if shouldEvaluate && f.percentDo() {
+			reportWithMessage(f.opt.Reporter, r, "fault: started")
 			f.opt.Injector.Handler(next).ServeHTTP(w, updateRequestContextValue(r, ContextValueInjected))
 		} else {
+			reportWithMessage(f.opt.Reporter, r, "fault: skipped")
 			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSkipped))
 		}
 	})
