@@ -6,6 +6,11 @@ import (
 	"net/http"
 )
 
+const (
+	// defaultRandSeed is used when a random seed is not set explicitly
+	defaultRandSeed = 1
+)
+
 var (
 	// ErrNilInjector returns when a nil Injector type is passed.
 	ErrNilInjector = errors.New("injector cannot be nil")
@@ -25,6 +30,9 @@ type Fault struct {
 	// pathWhitelist is a dict representation of Options.PathWhitelist that is populated in
 	// NewFault and used to make path lookups faster.
 	pathWhitelist map[string]bool
+
+	// randSeed is used to seed our random number generator
+	rand *rand.Rand
 }
 
 // Options holds configuration for a Fault.
@@ -49,6 +57,10 @@ type Options struct {
 	// Reporter is an interface that receives fault event data at Reporter.Report and can act on
 	// that data. By default we do not report on events and Reporter is nil.
 	Reporter Reporter
+
+	// RandSeed is a number to seed our random gnerator with. Only applies to Fault randomness,
+	// not randomness used by injectors.
+	RandSeed int64
 }
 
 // NewFault validates the provided options and returns a Fault struct.
@@ -75,6 +87,13 @@ func NewFault(o Options) (*Fault, error) {
 		for _, path := range o.PathWhitelist {
 			output.pathWhitelist[path] = true
 		}
+	}
+
+	// We assume that 0 is unspecified
+	if o.RandSeed != 0 {
+		output.rand = rand.New(rand.NewSource(o.RandSeed))
+	} else {
+		output.rand = rand.New(rand.NewSource(defaultRandSeed))
 	}
 
 	output.opt = o
@@ -129,7 +148,7 @@ func (f *Fault) SetReporter(r Reporter) {
 func (f *Fault) percentDo() bool {
 	var proceed bool
 
-	rn := rand.Float32()
+	rn := f.rand.Float32()
 	if rn < f.opt.PercentOfRequests && f.opt.PercentOfRequests <= 1.0 {
 		return true
 	}

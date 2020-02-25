@@ -62,21 +62,32 @@ func (i *ChainInjector) SetReporter(r Reporter) {
 // RandomInjector combines many injectors into a single injector. When the random injector is called
 // it randomly runs one of the provided injectors.
 type RandomInjector struct {
-	randF       func(int) int
 	middlewares []func(next http.Handler) http.Handler
 	reporter    Reporter
+
+	rand  *rand.Rand
+	randF func(int) int
 }
 
 // NewRandomInjector combines many injectors into a single random injector. When the random injector
 // is called it randomly runs one of the provided injectors.
 func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
-	RandomInjector := &RandomInjector{randF: rand.Intn}
+	RandomInjector := &RandomInjector{}
+
+	RandomInjector.rand = rand.New(rand.NewSource(defaultRandSeed))
+	RandomInjector.randF = RandomInjector.rand.Intn
 
 	for _, i := range is {
 		RandomInjector.middlewares = append(RandomInjector.middlewares, i.Handler)
 	}
 
 	return RandomInjector, nil
+}
+
+// SetRandSeed sets the random seed for RandomInjector to a non-default value
+func (i *RandomInjector) SetRandSeed(s int64) {
+	i.rand = rand.New(rand.NewSource(s))
+	i.randF = i.rand.Intn
 }
 
 // Handler executes a random injector from RandomInjector.middlewares

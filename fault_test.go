@@ -2,6 +2,7 @@ package fault
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
 	"testing"
@@ -35,6 +36,7 @@ func TestNewFault(t *testing.T) {
 				PathWhitelist: []string{
 					"/faultenabled",
 				},
+				RandSeed: 100,
 			},
 			wantFault: &Fault{
 				opt: Options{
@@ -49,6 +51,7 @@ func TestNewFault(t *testing.T) {
 					PathWhitelist: []string{
 						"/faultenabled",
 					},
+					RandSeed: 100,
 				},
 				pathBlacklist: map[string]bool{
 					"/donotinject": true,
@@ -56,6 +59,7 @@ func TestNewFault(t *testing.T) {
 				pathWhitelist: map[string]bool{
 					"/faultenabled": true,
 				},
+				rand: rand.New(rand.NewSource(100)),
 			},
 			wantErr: nil,
 		},
@@ -122,6 +126,7 @@ func TestFaultHandler(t *testing.T) {
 					Injector:          nil,
 					PercentOfRequests: 1.0,
 				},
+				rand: rand.New(rand.NewSource(defaultRandSeed)),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
@@ -136,6 +141,7 @@ func TestFaultHandler(t *testing.T) {
 					},
 					PercentOfRequests: 1.0,
 				},
+				rand: rand.New(rand.NewSource(defaultRandSeed)),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
@@ -150,6 +156,7 @@ func TestFaultHandler(t *testing.T) {
 					},
 					PercentOfRequests: 0.0,
 				},
+				rand: rand.New(rand.NewSource(defaultRandSeed)),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
@@ -164,6 +171,7 @@ func TestFaultHandler(t *testing.T) {
 					},
 					PercentOfRequests: 1.0,
 				},
+				rand: rand.New(rand.NewSource(defaultRandSeed)),
 			},
 			wantCode: http.StatusInternalServerError,
 			wantBody: http.StatusText(http.StatusInternalServerError),
@@ -184,6 +192,7 @@ func TestFaultHandler(t *testing.T) {
 				pathBlacklist: map[string]bool{
 					"/": true,
 				},
+				rand: rand.New(rand.NewSource(defaultRandSeed)),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
@@ -204,6 +213,7 @@ func TestFaultHandler(t *testing.T) {
 				pathWhitelist: map[string]bool{
 					"/": true,
 				},
+				rand: rand.New(rand.NewSource(defaultRandSeed)),
 			},
 			wantCode: http.StatusInternalServerError,
 			wantBody: http.StatusText(http.StatusInternalServerError),
@@ -224,6 +234,7 @@ func TestFaultHandler(t *testing.T) {
 				pathWhitelist: map[string]bool{
 					"/onlyinject": true,
 				},
+				rand: rand.New(rand.NewSource(defaultRandSeed)),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
@@ -250,6 +261,7 @@ func TestFaultHandler(t *testing.T) {
 				pathWhitelist: map[string]bool{
 					"/": true,
 				},
+				rand: rand.New(rand.NewSource(defaultRandSeed)),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
@@ -264,6 +276,7 @@ func TestFaultHandler(t *testing.T) {
 					},
 					PercentOfRequests: 1.0,
 				},
+				rand: rand.New(rand.NewSource(defaultRandSeed)),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
@@ -312,6 +325,7 @@ func TestFaultPercentDo(t *testing.T) {
 				opt: Options{
 					PercentOfRequests: tt.givePercent,
 				},
+				rand: rand.New(rand.NewSource(defaultRandSeed)),
 			}
 
 			var errorC, totalC float32
