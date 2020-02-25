@@ -36,6 +36,17 @@ func (r *DefaultReporter) Report(i ReportInput) {
 	}
 }
 
+// NoopReporter is a reporter that does nothing.
+type NoopReporter struct{}
+
+// NewNoopReporter returns a new NoopReporter
+func NewNoopReporter() *NoopReporter {
+	return &NoopReporter{}
+}
+
+// Report does nothing
+func (r *NoopReporter) Report(i ReportInput) {}
+
 // reportWithMessage is a helper function to simplify sending simple messages
 func reportWithMessage(r Reporter, req *http.Request, msg string) {
 	if r != nil {
