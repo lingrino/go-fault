@@ -12,9 +12,18 @@ var (
 	ErrInvalidHTTPCode = errors.New("not a valid http status code")
 )
 
+type InjectorState string
+
+const (
+	StateStarted  = "started"
+	StateFinished = "finished"
+	StateSkipped  = "skipped"
+)
+
 // Injector is an interface for our fault injection middleware. Injectors are wrapped into Faults.
 // Faults handle running the Injector the correct percent of the time.
 type Injector interface {
+	Name() string
 	Handler(next http.Handler) http.Handler
 	SetReporter(Reporter)
 }
@@ -37,24 +46,27 @@ func NewChainInjector(is ...Injector) (*ChainInjector, error) {
 	return chainInjector, nil
 }
 
+// Name returns the name of the Injector
+func (i *ChainInjector) Name() string {
+	return "Chain Injector"
+}
+
 // Handler executes ChainInjector.middlewares in order and then returns.
 func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
-			reportWithMessage(i.reporter, r, "chain injector: started")
 			r = updateRequestContextValue(r, ContextValueChainInjector)
 
 			// Loop in reverse to preserve handler order
 			for idx := len(i.middlewares) - 1; idx >= 0; idx-- {
 				next = i.middlewares[idx](next)
 			}
-
-			reportWithMessage(i.reporter, r, "chain injector: finished chain")
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
+// SetReporter sets the Reporter for the injector
 func (i *ChainInjector) SetReporter(r Reporter) {
 	i.reporter = r
 }
@@ -84,6 +96,11 @@ func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
 	return RandomInjector, nil
 }
 
+// Name returns the name of the Injector
+func (i *RandomInjector) Name() string {
+	return "Random Injector"
+}
+
 // SetRandSeed sets the random seed for RandomInjector to a non-default value
 func (i *RandomInjector) SetRandSeed(s int64) {
 	i.rand = rand.New(rand.NewSource(s))
@@ -94,7 +111,6 @@ func (i *RandomInjector) SetRandSeed(s int64) {
 func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil && len(i.middlewares) > 0 {
-			reportWithMessage(i.reporter, r, "random injector: started")
 			r = updateRequestContextValue(r, ContextValueRandomInjector)
 			i.middlewares[i.randF(len(i.middlewares))](next).ServeHTTP(w, r)
 		} else {
@@ -103,6 +119,7 @@ func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	})
 }
 
+// SetReporter sets the Reporter for the injector
 func (i *RandomInjector) SetReporter(r Reporter) {
 	i.reporter = r
 }
@@ -117,11 +134,16 @@ func NewRejectInjector() (*RejectInjector, error) {
 	return &RejectInjector{}, nil
 }
 
+// Name returns the name of the Injector
+func (i *RejectInjector) Name() string {
+	return "Reject Injector"
+}
+
 // Handler immediately rejects the request, returning an empty response.
 func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
-			reportWithMessage(i.reporter, r, "reject injector: started")
+			reportWithMessage(i.reporter, i.Name(), StateStarted)
 		}
 
 		// This is a specialized and documented way of sending an interrupted response to
@@ -131,6 +153,7 @@ func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 	})
 }
 
+// SetReporter sets the Reporter for the injector
 func (i *RejectInjector) SetReporter(r Reporter) {
 	i.reporter = r
 }
@@ -156,12 +179,17 @@ func NewErrorInjector(code int) (*ErrorInjector, error) {
 	}, nil
 }
 
+// Name returns the name of the Injector
+func (i *ErrorInjector) Name() string {
+	return "Error Injector"
+}
+
 // Handler immediately responds with the configured HTTP status code and default status text for
 // that code.
 func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
-			reportWithMessage(i.reporter, r, "error injector: started")
+			reportWithMessage(i.reporter, i.Name(), StateStarted)
 
 			if http.StatusText(i.statusCode) != "" {
 				http.Error(w, i.statusText, i.statusCode)
@@ -172,6 +200,7 @@ func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 	})
 }
 
+// SetReporter sets the Reporter for the injector
 func (i *ErrorInjector) SetReporter(r Reporter) {
 	i.reporter = r
 }
@@ -191,13 +220,18 @@ func NewSlowInjector(d time.Duration) (*SlowInjector, error) {
 	}, nil
 }
 
+// Name returns the name of the Injector
+func (i *SlowInjector) Name() string {
+	return "Slow Injector"
+}
+
 // Handler waits the configured duration and then continues the request.
 func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil && i.sleep != nil {
-			reportWithMessage(i.reporter, r, "slow injector: started")
+			reportWithMessage(i.reporter, i.Name(), StateStarted)
 			i.sleep(i.duration)
-			reportWithMessage(i.reporter, r, "slow injector: finished")
+			reportWithMessage(i.reporter, i.Name(), StateFinished)
 
 			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSlowInjector))
 		} else {
@@ -206,6 +240,7 @@ func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 	})
 }
 
+// SetReporter sets the Reporter for the injector
 func (i *SlowInjector) SetReporter(r Reporter) {
 	i.reporter = r
 }

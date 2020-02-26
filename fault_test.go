@@ -51,6 +51,7 @@ func TestNewFault(t *testing.T) {
 					PathWhitelist: []string{
 						"/faultenabled",
 					},
+					Reporter: &NoopReporter{},
 					RandSeed: 100,
 				},
 				pathBlacklist: map[string]bool{

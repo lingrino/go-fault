@@ -67,6 +67,11 @@ func newTestInjector(resp500 bool) *testInjector {
 	}
 }
 
+// Name returns the name of the Injector
+func (i *testInjector) Name() string {
+	return "Test Injector"
+}
+
 // Handler returns a 500 if resp500 is true and otherwise passes on the request.
 func (i *testInjector) Handler(next http.Handler) http.Handler {
 	if i.resp500 {
@@ -77,6 +82,7 @@ func (i *testInjector) Handler(next http.Handler) http.Handler {
 	return next
 }
 
+// SetReporter sets the Reporter for the injector
 func (i *testInjector) SetReporter(r Reporter) {
 	i.reporter = r
 }

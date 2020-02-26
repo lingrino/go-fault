@@ -89,6 +89,10 @@ func NewFault(o Options) (*Fault, error) {
 		}
 	}
 
+	if o.Reporter == nil {
+		o.Reporter = NewNoopReporter()
+	}
+
 	// We assume that 0 is unspecified
 	if o.RandSeed != 0 {
 		output.rand = rand.New(rand.NewSource(o.RandSeed))
@@ -99,6 +103,11 @@ func NewFault(o Options) (*Fault, error) {
 	output.opt = o
 
 	return output, nil
+}
+
+// Name returns the name of the Injector
+func (f *Fault) Name() string {
+	return "Fault"
 }
 
 // Handler returns the main fault handler, which runs Injector.Handler a percent of the time.
@@ -129,15 +138,16 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 		}
 
 		if shouldEvaluate && f.percentDo() {
-			reportWithMessage(f.opt.Reporter, r, "fault: started")
+			reportWithMessage(f.opt.Reporter, f.Name(), StateStarted)
 			f.opt.Injector.Handler(next).ServeHTTP(w, updateRequestContextValue(r, ContextValueInjected))
 		} else {
-			reportWithMessage(f.opt.Reporter, r, "fault: skipped")
+			reportWithMessage(f.opt.Reporter, f.Name(), StateSkipped)
 			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSkipped))
 		}
 	})
 }
 
+// SetReporter sets the Reporter for the Fault and the Injector
 func (f *Fault) SetReporter(r Reporter) {
 	f.opt.Reporter = r
 	f.opt.Injector.SetReporter(r)
