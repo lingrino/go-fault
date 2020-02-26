@@ -143,7 +143,7 @@ func (i *RejectInjector) Name() string {
 func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
-			reportWithMessage(i.reporter, i.Name(), StateStarted)
+			i.reporter.Report(i.Name(), StateStarted)
 		}
 
 		// This is a specialized and documented way of sending an interrupted response to
@@ -189,7 +189,7 @@ func (i *ErrorInjector) Name() string {
 func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
-			reportWithMessage(i.reporter, i.Name(), StateStarted)
+			i.reporter.Report(i.Name(), StateStarted)
 
 			if http.StatusText(i.statusCode) != "" {
 				http.Error(w, i.statusText, i.statusCode)
@@ -229,9 +229,9 @@ func (i *SlowInjector) Name() string {
 func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil && i.sleep != nil {
-			reportWithMessage(i.reporter, i.Name(), StateStarted)
+			i.reporter.Report(i.Name(), StateStarted)
 			i.sleep(i.duration)
-			reportWithMessage(i.reporter, i.Name(), StateFinished)
+			i.reporter.Report(i.Name(), StateFinished)
 
 			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSlowInjector))
 		} else {

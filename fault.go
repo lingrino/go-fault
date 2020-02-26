@@ -138,10 +138,10 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 		}
 
 		if shouldEvaluate && f.percentDo() {
-			reportWithMessage(f.opt.Reporter, f.Name(), StateStarted)
+			f.opt.Reporter.Report(f.Name(), StateStarted)
 			f.opt.Injector.Handler(next).ServeHTTP(w, updateRequestContextValue(r, ContextValueInjected))
 		} else {
-			reportWithMessage(f.opt.Reporter, f.Name(), StateSkipped)
+			f.opt.Reporter.Report(f.Name(), StateSkipped)
 			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSkipped))
 		}
 	})
