@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/rand"
 	"net/http"
+	"reflect"
 )
 
 const (
@@ -105,11 +106,6 @@ func NewFault(o Options) (*Fault, error) {
 	return output, nil
 }
 
-// Name returns the name of the Injector
-func (f *Fault) Name() string {
-	return "Fault"
-}
-
 // Handler returns the main fault handler, which runs Injector.Handler a percent of the time.
 func (f *Fault) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -138,19 +134,12 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 		}
 
 		if shouldEvaluate && f.percentDo() {
-			f.opt.Reporter.Report(f.Name(), StateStarted)
 			f.opt.Injector.Handler(next).ServeHTTP(w, updateRequestContextValue(r, ContextValueInjected))
 		} else {
-			f.opt.Reporter.Report(f.Name(), StateSkipped)
+			f.opt.Reporter.Report(reflect.ValueOf(*f).Type().Name(), StateSkipped)
 			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSkipped))
 		}
 	})
-}
-
-// SetReporter sets the Reporter for the Fault and the Injector
-func (f *Fault) SetReporter(r Reporter) {
-	f.opt.Reporter = r
-	f.opt.Injector.SetReporter(r)
 }
 
 // percentDo takes a percent (0.0 <= per <= 1.0) and randomly returns true that percent of the time.
