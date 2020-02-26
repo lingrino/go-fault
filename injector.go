@@ -12,12 +12,12 @@ var (
 	ErrInvalidHTTPCode = errors.New("not a valid http status code")
 )
 
-type InjectorState string
+type InjectorState int
 
 const (
-	StateStarted  = "started"
-	StateFinished = "finished"
-	StateSkipped  = "skipped"
+	StateStarted InjectorState = iota + 1
+	StateFinished
+	StateSkipped
 )
 
 // Injector is an interface for our fault injection middleware. Injectors are wrapped into Faults.
