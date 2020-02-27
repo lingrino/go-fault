@@ -22,7 +22,7 @@ func TestNewFault(t *testing.T) {
 		wantErr      error
 	}{
 		{
-			name:         "valid",
+			name:         "all options",
 			giveInjector: newTestInjector(false),
 			giveOptions: []FaultOption{
 				WithEnabled(true),
@@ -41,31 +41,46 @@ func TestNewFault(t *testing.T) {
 					"/donotinject": true,
 				},
 				pathWhitelist: map[string]bool{
-					"/faultenabled": true,
+					"/onlyinject": true,
 				},
 				randSeed: 100,
 				rand:     rand.New(rand.NewSource(100)),
 			},
 			wantErr: nil,
 		},
-		// {
-		// 	name: "invalid injector",
-		// 	give: Options{
-		// 		Injector:          nil,
-		// 		PercentOfRequests: 1.0,
-		// 	},
-		// 	wantFault: nil,
-		// 	wantErr:   ErrNilInjector,
-		// },
-		// {
-		// 	name: "invalid percent",
-		// 	give: Options{
-		// 		Injector:          newTestInjector(false),
-		// 		PercentOfRequests: 1.1,
-		// 	},
-		// 	wantFault: nil,
-		// 	wantErr:   ErrInvalidPercent,
-		// },
+		{
+			name:         "nil injector",
+			giveInjector: nil,
+			giveOptions:  nil,
+			wantFault:    nil,
+			wantErr:      ErrNilInjector,
+		},
+		{
+			name:         "invalid percent",
+			giveInjector: newTestInjector(false),
+			giveOptions: []FaultOption{
+				WithInjectPercent(100.0),
+			},
+			wantFault: nil,
+			wantErr:   ErrInvalidPercent,
+		},
+		{
+			name:         "empty options",
+			giveInjector: newTestInjector(false),
+			giveOptions:  []FaultOption{},
+			wantFault: &Fault{
+				enabled: false,
+				injector: &testInjector{
+					resp500: false,
+				},
+				injectPercent: 0.0,
+				pathBlacklist: nil,
+				pathWhitelist: nil,
+				randSeed:      defaultRandSeed,
+				rand:          rand.New(rand.NewSource(defaultRandSeed)),
+			},
+			wantErr: nil,
+		},
 	}
 
 	for _, tt := range tests {
@@ -86,182 +101,93 @@ func TestFaultHandler(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		give     *Fault
-		wantCode int
-		wantBody string
+		name         string
+		giveInjector Injector
+		giveOptions  []FaultOption
+		wantCode     int
+		wantBody     string
 	}{
 		{
-			name:     "nil",
-			give:     nil,
-			wantCode: testHandlerCode,
-			wantBody: testHandlerBody,
-		},
-		{
-			name:     "empty",
-			give:     &Fault{},
-			wantCode: testHandlerCode,
-			wantBody: testHandlerBody,
-		},
-		{
-			name: "nil injector",
-			give: &Fault{
-				opt: Options{
-					Enabled:           true,
-					Injector:          nil,
-					PercentOfRequests: 1.0,
-				},
-				rand: rand.New(rand.NewSource(defaultRandSeed)),
+			name:         "not enabled",
+			giveInjector: newTestInjector(false),
+			giveOptions: []FaultOption{
+				WithEnabled(false),
+				WithInjectPercent(1.0),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
 		},
 		{
-			name: "not enabled",
-			give: &Fault{
-				opt: Options{
-					Enabled: false,
-					Injector: &testInjector{
-						resp500: false,
-					},
-					PercentOfRequests: 1.0,
-				},
-				rand: rand.New(rand.NewSource(defaultRandSeed)),
+			name:         "zero percent",
+			giveInjector: newTestInjector(false),
+			giveOptions: []FaultOption{
+				WithEnabled(true),
+				WithInjectPercent(0.0),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
 		},
 		{
-			name: "zero percent",
-			give: &Fault{
-				opt: Options{
-					Enabled: true,
-					Injector: &testInjector{
-						resp500: false,
-					},
-					PercentOfRequests: 0.0,
-				},
-				rand: rand.New(rand.NewSource(defaultRandSeed)),
-			},
-			wantCode: testHandlerCode,
-			wantBody: testHandlerBody,
-		},
-		{
-			name: "100 percent 500s",
-			give: &Fault{
-				opt: Options{
-					Enabled: true,
-					Injector: &testInjector{
-						resp500: true,
-					},
-					PercentOfRequests: 1.0,
-				},
-				rand: rand.New(rand.NewSource(defaultRandSeed)),
+			name:         "100 percent 500s",
+			giveInjector: newTestInjector(true),
+			giveOptions: []FaultOption{
+				WithEnabled(true),
+				WithInjectPercent(1.0),
 			},
 			wantCode: http.StatusInternalServerError,
 			wantBody: http.StatusText(http.StatusInternalServerError),
 		},
 		{
-			name: "100 percent 500s with blacklist root",
-			give: &Fault{
-				opt: Options{
-					Enabled: true,
-					Injector: &testInjector{
-						resp500: true,
-					},
-					PercentOfRequests: 1.0,
-					PathBlacklist: []string{
-						"/",
-					},
-				},
-				pathBlacklist: map[string]bool{
-					"/": true,
-				},
-				rand: rand.New(rand.NewSource(defaultRandSeed)),
+			name:         "100 percent 500s with blacklist root",
+			giveInjector: newTestInjector(true),
+			giveOptions: []FaultOption{
+				WithEnabled(true),
+				WithInjectPercent(1.0),
+				WithPathBlacklist([]string{"/"}),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
 		},
 		{
-			name: "100 percent 500s with whitelist root",
-			give: &Fault{
-				opt: Options{
-					Enabled: true,
-					Injector: &testInjector{
-						resp500: true,
-					},
-					PercentOfRequests: 1.0,
-					PathWhitelist: []string{
-						"/",
-					},
-				},
-				pathWhitelist: map[string]bool{
-					"/": true,
-				},
-				rand: rand.New(rand.NewSource(defaultRandSeed)),
+			name:         "100 percent 500s with whitelist root",
+			giveInjector: newTestInjector(true),
+			giveOptions: []FaultOption{
+				WithEnabled(true),
+				WithInjectPercent(1.0),
+				WithPathWhitelist([]string{"/"}),
 			},
 			wantCode: http.StatusInternalServerError,
 			wantBody: http.StatusText(http.StatusInternalServerError),
 		},
 		{
-			name: "100 percent 500s with whitelist other",
-			give: &Fault{
-				opt: Options{
-					Enabled: true,
-					Injector: &testInjector{
-						resp500: true,
-					},
-					PercentOfRequests: 1.0,
-					PathWhitelist: []string{
-						"/onlyinject",
-					},
-				},
-				pathWhitelist: map[string]bool{
-					"/onlyinject": true,
-				},
-				rand: rand.New(rand.NewSource(defaultRandSeed)),
+			name:         "100 percent 500s with whitelist other",
+			giveInjector: newTestInjector(true),
+			giveOptions: []FaultOption{
+				WithEnabled(true),
+				WithInjectPercent(1.0),
+				WithPathWhitelist([]string{"/onlyinject"}),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
 		},
 		{
-			name: "100 percent 500s with whitelist and blacklist root",
-			give: &Fault{
-				opt: Options{
-					Enabled: true,
-					Injector: &testInjector{
-						resp500: true,
-					},
-					PercentOfRequests: 1.0,
-					PathBlacklist: []string{
-						"/",
-					},
-					PathWhitelist: []string{
-						"/",
-					},
-				},
-				pathBlacklist: map[string]bool{
-					"/": true,
-				},
-				pathWhitelist: map[string]bool{
-					"/": true,
-				},
-				rand: rand.New(rand.NewSource(defaultRandSeed)),
+			name:         "100 percent 500s with whitelist and blacklist root",
+			giveInjector: newTestInjector(true),
+			giveOptions: []FaultOption{
+				WithEnabled(true),
+				WithInjectPercent(1.0),
+				WithPathBlacklist([]string{"/"}),
+				WithPathWhitelist([]string{"/"}),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
 		},
 		{
-			name: "100 percent",
-			give: &Fault{
-				opt: Options{
-					Enabled: true,
-					Injector: &testInjector{
-						resp500: false,
-					},
-					PercentOfRequests: 1.0,
-				},
-				rand: rand.New(rand.NewSource(defaultRandSeed)),
+			name:         "100 percent inject nothing",
+			giveInjector: newTestInjector(false),
+			giveOptions: []FaultOption{
+				WithEnabled(true),
+				WithInjectPercent(1.0),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
@@ -273,7 +199,10 @@ func TestFaultHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			rr := testRequest(t, tt.give)
+			f, err := NewFault(tt.giveInjector, tt.giveOptions...)
+			assert.NoError(t, err)
+
+			rr := testRequest(t, f)
 
 			assert.Equal(t, tt.wantCode, rr.Code)
 			assert.Equal(t, tt.wantBody, strings.TrimSpace(rr.Body.String()))
@@ -281,7 +210,7 @@ func TestFaultHandler(t *testing.T) {
 	}
 }
 
-// TestFaultPercentDo tests the internal Fault.percentDo.
+// TestFaultPercentDo tests the internal Fault.percentDo().
 func TestFaultPercentDo(t *testing.T) {
 	t.Parallel()
 
@@ -290,15 +219,12 @@ func TestFaultPercentDo(t *testing.T) {
 		wantPercent float32
 		wantRange   float32
 	}{
-		{-1.0, 0.0, 0.0},
 		{},
 		{0.0, 0.0, 0.0},
 		{0.0001, 0.0001, 0.005},
 		{0.3298, 0.3298, 0.005},
 		{0.75, 0.75, 0.005},
 		{1.0, 1.0, 0.0},
-		{1.1, 0.0, 0.0},
-		{10000.1, 0.0, 0.0},
 	}
 
 	for _, tt := range tests {
@@ -306,12 +232,8 @@ func TestFaultPercentDo(t *testing.T) {
 		t.Run(fmt.Sprintf("%g", tt.givePercent), func(t *testing.T) {
 			t.Parallel()
 
-			f := &Fault{
-				opt: Options{
-					PercentOfRequests: tt.givePercent,
-				},
-				rand: rand.New(rand.NewSource(defaultRandSeed)),
-			}
+			f, err := NewFault(newTestInjector(false), WithInjectPercent(tt.givePercent))
+			assert.NoError(t, err)
 
 			var errorC, totalC float32
 			for totalC <= 100000 {
