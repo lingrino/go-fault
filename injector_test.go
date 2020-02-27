@@ -220,108 +220,84 @@ func TestNewRandomInjector(t *testing.T) {
 	}
 }
 
-// // TestRandomInjectorHandler tests RandomInjector.Handler.
-// func TestRandomInjectorHandler(t *testing.T) {
-// 	t.Parallel()
+// TestRandomInjectorHandler tests RandomInjector.Handler.
+func TestRandomInjectorHandler(t *testing.T) {
+	t.Parallel()
 
-// 	tests := []struct {
-// 		name     string
-// 		give     *RandomInjector
-// 		wantCode int
-// 		wantBody string
-// 	}{
-// 		{
-// 			name:     "nil",
-// 			give:     nil,
-// 			wantCode: testHandlerCode,
-// 			wantBody: testHandlerBody,
-// 		},
-// 		{
-// 			name:     "empty",
-// 			give:     &RandomInjector{},
-// 			wantCode: testHandlerCode,
-// 			wantBody: testHandlerBody,
-// 		},
-// 		{
-// 			name: "nil middlewares",
-// 			give: &RandomInjector{
-// 				middlewares: nil,
-// 			},
-// 			wantCode: testHandlerCode,
-// 			wantBody: testHandlerBody,
-// 		},
-// 		{
-// 			name: "empty middlewares",
-// 			give: &RandomInjector{
-// 				middlewares: []func(next http.Handler) http.Handler{},
-// 			},
-// 			wantCode: testHandlerCode,
-// 			wantBody: testHandlerBody,
-// 		},
-// 		{
-// 			name: "one",
-// 			give: &RandomInjector{
-// 				randF: func(int) int { return 0 },
-// 				middlewares: []func(next http.Handler) http.Handler{
-// 					func(next http.Handler) http.Handler {
-// 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 							w.WriteHeader(http.StatusOK)
-// 							fmt.Fprint(w, "one")
-// 							next.ServeHTTP(w, r)
-// 						})
-// 					},
-// 				},
-// 			},
-// 			wantCode: http.StatusOK,
-// 			wantBody: "one" + testHandlerBody,
-// 		},
-// 		{
-// 			name: "two",
-// 			give: &RandomInjector{
-// 				randF: func(int) int { return 1 },
-// 				middlewares: []func(next http.Handler) http.Handler{
-// 					func(next http.Handler) http.Handler {
-// 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 							w.WriteHeader(http.StatusOK)
-// 							fmt.Fprint(w, "one")
-// 							next.ServeHTTP(w, r)
-// 						})
-// 					},
-// 					func(next http.Handler) http.Handler {
-// 						return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-// 							w.WriteHeader(http.StatusOK)
-// 							fmt.Fprint(w, "two")
-// 							next.ServeHTTP(w, r)
-// 						})
-// 					},
-// 				},
-// 			},
-// 			wantCode: http.StatusOK,
-// 			wantBody: "two" + testHandlerBody,
-// 		},
-// 	}
+	tests := []struct {
+		name     string
+		give     []Injector
+		wantCode int
+		wantBody string
+	}{
+		{
+			name:     "nil",
+			give:     nil,
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name:     "empty",
+			give:     []Injector{},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "one",
+			give: []Injector{
+				newTestInjectorOneOK(),
+			},
+			wantCode: http.StatusOK,
+			wantBody: "one" + testHandlerBody,
+		},
+		{
+			name: "two",
+			give: []Injector{
+				newTestInjectorOneOK(),
+				newTestInjectorTwoTeapot(),
+			},
+			// With defaultRandSeed we will always choose the second item
+			wantCode: http.StatusTeapot,
+			wantBody: "two" + testHandlerBody,
+		},
+		{
+			name: "seven",
+			give: []Injector{
+				newTestInjectorNoop(),
+				newTestInjectorNoop(),
+				newTestInjectorNoop(),
+				newTestInjectorNoop(),
+				newTestInjectorNoop(),
+				newTestInjectorNoop(),
+				newTestInjectorTwoTeapot(),
+			},
+			// With defaultRandSeed we will always choose the seventh item
+			wantCode: http.StatusTeapot,
+			wantBody: "two" + testHandlerBody,
+		},
+	}
 
-// 	for _, tt := range tests {
-// 		tt := tt
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			t.Parallel()
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-// 			f := &Fault{
-// 				opt: Options{
-// 					Enabled:           true,
-// 					Injector:          tt.give,
-// 					PercentOfRequests: 1.0,
-// 				},
-// 				rand: rand.New(rand.NewSource(defaultRandSeed)),
-// 			}
+			ri, err := NewRandomInjector(tt.give)
+			assert.NoError(t, err)
 
-// 			rr := testRequest(t, f)
+			f, err := NewFault(ri,
+				WithEnabled(true),
+				WithInjectPercent(1.0),
+			)
+			assert.NoError(t, err)
 
-// 			assert.Equal(t, tt.wantCode, rr.Code)
-// 			assert.Equal(t, tt.wantBody, strings.TrimSpace(rr.Body.String()))
-// 		})
-// 	}
-// }
+			rr := testRequest(t, f)
+
+			assert.Equal(t, tt.wantCode, rr.Code)
+			assert.Equal(t, tt.wantBody, strings.TrimSpace(rr.Body.String()))
+		})
+	}
+}
 
 // // TestNewErrorInjector tests NewErrorInjector.
 // func TestNewErrorInjector(t *testing.T) {
