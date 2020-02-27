@@ -23,7 +23,7 @@ func TestNewFault(t *testing.T) {
 	}{
 		{
 			name:         "all options",
-			giveInjector: newTestInjector(false),
+			giveInjector: newTestInjectorNoop(),
 			giveOptions: []FaultOption{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
@@ -32,10 +32,8 @@ func TestNewFault(t *testing.T) {
 				WithRandSeed(100),
 			},
 			wantFault: &Fault{
-				enabled: true,
-				injector: &testInjector{
-					resp500: false,
-				},
+				enabled:       true,
+				injector:      &testInjectorNoop{},
 				injectPercent: 1.0,
 				pathBlacklist: map[string]bool{
 					"/donotinject": true,
@@ -57,7 +55,7 @@ func TestNewFault(t *testing.T) {
 		},
 		{
 			name:         "invalid percent",
-			giveInjector: newTestInjector(false),
+			giveInjector: newTestInjectorNoop(),
 			giveOptions: []FaultOption{
 				WithInjectPercent(100.0),
 			},
@@ -66,13 +64,11 @@ func TestNewFault(t *testing.T) {
 		},
 		{
 			name:         "empty options",
-			giveInjector: newTestInjector(false),
+			giveInjector: newTestInjectorNoop(),
 			giveOptions:  []FaultOption{},
 			wantFault: &Fault{
-				enabled: false,
-				injector: &testInjector{
-					resp500: false,
-				},
+				enabled:       false,
+				injector:      &testInjectorNoop{},
 				injectPercent: 0.0,
 				pathBlacklist: nil,
 				pathWhitelist: nil,
@@ -109,7 +105,7 @@ func TestFaultHandler(t *testing.T) {
 	}{
 		{
 			name:         "not enabled",
-			giveInjector: newTestInjector(false),
+			giveInjector: newTestInjectorNoop(),
 			giveOptions: []FaultOption{
 				WithEnabled(false),
 				WithInjectPercent(1.0),
@@ -119,7 +115,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "zero percent",
-			giveInjector: newTestInjector(false),
+			giveInjector: newTestInjectorNoop(),
 			giveOptions: []FaultOption{
 				WithEnabled(true),
 				WithInjectPercent(0.0),
@@ -129,7 +125,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s",
-			giveInjector: newTestInjector(true),
+			giveInjector: newTestInjector500s(),
 			giveOptions: []FaultOption{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
@@ -139,7 +135,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s with blacklist root",
-			giveInjector: newTestInjector(true),
+			giveInjector: newTestInjector500s(),
 			giveOptions: []FaultOption{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
@@ -150,7 +146,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s with whitelist root",
-			giveInjector: newTestInjector(true),
+			giveInjector: newTestInjector500s(),
 			giveOptions: []FaultOption{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
@@ -161,7 +157,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s with whitelist other",
-			giveInjector: newTestInjector(true),
+			giveInjector: newTestInjector500s(),
 			giveOptions: []FaultOption{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
@@ -172,7 +168,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s with whitelist and blacklist root",
-			giveInjector: newTestInjector(true),
+			giveInjector: newTestInjector500s(),
 			giveOptions: []FaultOption{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
@@ -184,7 +180,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent inject nothing",
-			giveInjector: newTestInjector(false),
+			giveInjector: newTestInjectorNoop(),
 			giveOptions: []FaultOption{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
@@ -232,20 +228,22 @@ func TestFaultPercentDo(t *testing.T) {
 		t.Run(fmt.Sprintf("%g", tt.givePercent), func(t *testing.T) {
 			t.Parallel()
 
-			f, err := NewFault(newTestInjector(false), WithInjectPercent(tt.givePercent))
+			f, err := NewFault(newTestInjectorNoop(),
+				WithInjectPercent(tt.givePercent),
+			)
 			assert.NoError(t, err)
 
-			var errorC, totalC float32
+			var trueC, totalC float32
 			for totalC <= 100000 {
 				result := f.percentDo()
 				if result {
-					errorC++
+					trueC++
 				}
 				totalC++
 			}
 
 			minP := tt.wantPercent - tt.wantRange
-			per := errorC / totalC
+			per := trueC / totalC
 			maxP := tt.wantPercent + tt.wantRange
 
 			assert.GreaterOrEqual(t, per, minP)

@@ -26,7 +26,7 @@ type ChainInjector struct {
 
 // NewChainInjector combines many injectors into a single chain injector. In a chain injector the
 // Handler() for each injector will execute in the order provided.
-func NewChainInjector(is ...Injector) (*ChainInjector, error) {
+func NewChainInjector(is []Injector) (*ChainInjector, error) {
 	chainInjector := &ChainInjector{}
 	for _, i := range is {
 		chainInjector.middlewares = append(chainInjector.middlewares, i.Handler)
@@ -55,29 +55,37 @@ func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 type RandomInjector struct {
 	middlewares []func(next http.Handler) http.Handler
 
-	rand  *rand.Rand
-	randF func(int) int
+	randSeed int64
+	rand     *rand.Rand
+}
+
+// RandomInjectorOption configures a RandomInjector.
+type RandomInjectorOption interface {
+	applyRandomInjector(i *RandomInjector)
+}
+
+func (o randSeedOption) applyRandomInjector(i *RandomInjector) {
+	i.randSeed = int64(o)
 }
 
 // NewRandomInjector combines many injectors into a single random injector. When the random injector
 // is called it randomly runs one of the provided injectors.
-func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
-	RandomInjector := &RandomInjector{}
-
-	RandomInjector.rand = rand.New(rand.NewSource(defaultRandSeed))
-	RandomInjector.randF = RandomInjector.rand.Intn
-
-	for _, i := range is {
-		RandomInjector.middlewares = append(RandomInjector.middlewares, i.Handler)
+func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInjector, error) {
+	randomInjector := &RandomInjector{
+		randSeed: defaultRandSeed,
 	}
 
-	return RandomInjector, nil
-}
+	for _, opt := range opts {
+		opt.applyRandomInjector(randomInjector)
+	}
 
-// SetRandSeed sets the random seed for RandomInjector to a non-default value
-func (i *RandomInjector) SetRandSeed(s int64) {
-	i.rand = rand.New(rand.NewSource(s))
-	i.randF = i.rand.Intn
+	for _, i := range is {
+		randomInjector.middlewares = append(randomInjector.middlewares, i.Handler)
+	}
+
+	randomInjector.rand = rand.New(rand.NewSource(randomInjector.randSeed))
+
+	return randomInjector, nil
 }
 
 // Handler executes a random injector from RandomInjector.middlewares
@@ -85,7 +93,7 @@ func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil && len(i.middlewares) > 0 {
 			r = updateRequestContextValue(r, ContextValueRandomInjector)
-			i.middlewares[i.randF(len(i.middlewares))](next).ServeHTTP(w, r)
+			i.middlewares[i.rand.Intn(len(i.middlewares))](next).ServeHTTP(w, r)
 		} else {
 			next.ServeHTTP(w, r)
 		}

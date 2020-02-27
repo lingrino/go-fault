@@ -44,13 +44,13 @@ type Fault struct {
 
 // FaultOption configures a Fault.
 type FaultOption interface {
-	applyFault(s *Fault)
+	applyFault(f *Fault)
 }
 
 type enabledFaultOption bool
 
-func (e enabledFaultOption) applyFault(f *Fault) {
-	f.enabled = bool(e)
+func (o enabledFaultOption) applyFault(f *Fault) {
+	f.enabled = bool(o)
 }
 
 // WithEnabled determines if the fault should evaluate.
@@ -60,8 +60,8 @@ func WithEnabled(e bool) FaultOption {
 
 type injectPercentFaultOption float32
 
-func (p injectPercentFaultOption) applyFault(f *Fault) {
-	f.injectPercent = float32(p)
+func (o injectPercentFaultOption) applyFault(f *Fault) {
+	f.injectPercent = float32(o)
 }
 
 // WithInjectPercent sets the percent of requests that run the injector. 0.0 <= p <= 1.0.
@@ -71,9 +71,9 @@ func WithInjectPercent(p float32) FaultOption {
 
 type pathBlacklistFaultOption []string
 
-func (p pathBlacklistFaultOption) applyFault(f *Fault) {
-	blacklist := make(map[string]bool, len(p))
-	for _, path := range p {
+func (o pathBlacklistFaultOption) applyFault(f *Fault) {
+	blacklist := make(map[string]bool, len(o))
+	for _, path := range o {
 		blacklist[path] = true
 	}
 	f.pathBlacklist = blacklist
@@ -86,9 +86,9 @@ func WithPathBlacklist(blacklist []string) FaultOption {
 
 type pathWhitelistFaultOption []string
 
-func (p pathWhitelistFaultOption) applyFault(f *Fault) {
-	whitelist := make(map[string]bool, len(p))
-	for _, path := range p {
+func (o pathWhitelistFaultOption) applyFault(f *Fault) {
+	whitelist := make(map[string]bool, len(o))
+	for _, path := range o {
 		whitelist[path] = true
 	}
 	f.pathWhitelist = whitelist
@@ -99,15 +99,20 @@ func WithPathWhitelist(whitelist []string) FaultOption {
 	return pathWhitelistFaultOption(whitelist)
 }
 
-type randSeedFaultOption int64
+type RandSeedOption interface {
+	FaultOption
+	RandomInjectorOption
+}
 
-func (p randSeedFaultOption) applyFault(f *Fault) {
-	f.randSeed = int64(p)
+type randSeedOption int64
+
+func (o randSeedOption) applyFault(f *Fault) {
+	f.randSeed = int64(o)
 }
 
 // WithRandSeed sets the seed for fault.rand
-func WithRandSeed(s int64) FaultOption {
-	return randSeedFaultOption(s)
+func WithRandSeed(s int64) RandSeedOption {
+	return randSeedOption(s)
 }
 
 // NewFault validates and sets the provided options and returns a Fault.
