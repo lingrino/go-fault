@@ -61,10 +61,10 @@ type RandomInjector struct {
 
 // RandomInjectorOption configures a RandomInjector.
 type RandomInjectorOption interface {
-	applyRandomInjector(i *RandomInjector)
+	applyErrorInjector(i *RandomInjector)
 }
 
-func (o randSeedOption) applyRandomInjector(i *RandomInjector) {
+func (o randSeedOption) applyErrorInjector(i *RandomInjector) {
 	i.randSeed = int64(o)
 }
 
@@ -76,7 +76,7 @@ func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInje
 	}
 
 	for _, opt := range opts {
-		opt.applyRandomInjector(randomInjector)
+		opt.applyErrorInjector(randomInjector)
 	}
 
 	for _, i := range is {
@@ -125,30 +125,65 @@ type ErrorInjector struct {
 	statusText string
 }
 
-// NewErrorInjector returns an ErrorInjector that reponds with the configured status code.
-func NewErrorInjector(code int) (*ErrorInjector, error) {
-	statusText := http.StatusText(code)
-	if statusText == "" {
-		return nil, ErrInvalidHTTPCode
-	}
-
-	return &ErrorInjector{
-		statusCode: code,
-		statusText: statusText,
-	}, nil
+// ErrorInjectorOption configures an ErrorInjector.
+type ErrorInjectorOption interface {
+	applyErrorInjector(i *ErrorInjector)
 }
 
-// Handler immediately responds with the configured HTTP status code and default status text for
-// that code.
+type statusCodeOption int
+
+func (o statusCodeOption) applyErrorInjector(i *ErrorInjector) {
+	i.statusCode = int(o)
+}
+
+// WithStatusCode sets the status code that should return.
+func WithStatusCode(c int) ErrorInjectorOption {
+	return statusCodeOption(c)
+}
+
+type statusTextOption string
+
+func (o statusTextOption) applyErrorInjector(i *ErrorInjector) {
+	i.statusText = string(o)
+}
+
+// WithStatusText sets the status text that should return.
+func WithStatusText(t string) ErrorInjectorOption {
+	return statusTextOption(t)
+}
+
+// NewErrorInjector returns an ErrorInjector that reponds with the configured status code.
+func NewErrorInjector(opts ...ErrorInjectorOption) (*ErrorInjector, error) {
+	const placeholderStatusText = "go-fault replace with default code text"
+
+	// set the defaults.
+	// by default we return ErrInvalidHTTPCode since 0 is invalid.
+	ei := &ErrorInjector{
+		statusCode: 0,
+		statusText: placeholderStatusText,
+	}
+
+	// apply the options.
+	for _, opt := range opts {
+		opt.applyErrorInjector(ei)
+	}
+
+	// sanitize the options.
+	if http.StatusText(ei.statusCode) == "" {
+		return nil, ErrInvalidHTTPCode
+	}
+	if ei.statusText == placeholderStatusText {
+		ei.statusText = http.StatusText(ei.statusCode)
+	}
+
+	return ei, nil
+}
+
+// Handler immediately responds with the configured HTTP status code text.
 func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if i != nil {
-			if http.StatusText(i.statusCode) != "" {
-				http.Error(w, i.statusText, i.statusCode)
-				return
-			}
-		}
-		next.ServeHTTP(w, r)
+		http.Error(w, i.statusText, i.statusCode)
+		return
 	})
 }
 
