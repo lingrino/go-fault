@@ -26,12 +26,11 @@ var mainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) 
 
 func main() {
         slowInjector, _ := fault.NewSlowInjector(time.Second * 2)
-        slowFault, _ := fault.NewFault(fault.Options{
-                Enabled:           true,
-                Injector:          slowInjector,
-                PercentOfRequests: 0.25,
-                PathBlacklist:     []string{"/ping", "/health"},
-        })
+        slowFault, _ := fault.NewFault(slowInjector,
+                fault.WithEnabled(true),
+                fault.WithInjectPercent(0.25),
+                fault.WithPathBlacklist([]string{"/ping", "/health"}),
+        )
 
         // Add 2 seconds of latency to 25% of our requests
         handlerChain := slowFault.Handler(mainHandler)
@@ -52,7 +51,7 @@ ok      github.com/github/go-fault      2.858s
 
 ## Benchmarks
 
-The fault package is safe to leave implemented even when you are not running a fault injection. If you set `fault.Opt.Enabled` to `false` there should be negligible performance degradation compared to removing the package from the request path. If you have `fault.Opt.Enabled` set to `true` there may be very minor performance differences, but this will only be the case *while you are already doing fault injection.*
+The fault package is safe to leave implemented even when you are not running a fault injection. While the faulut is disabled there should be negligible performance degradation compared to removing the package from the request path. While enabled there may be very minor performance differences, but this will only be the case *while you are already doing fault injection.*
 
 Benchmarks are provided to compare without faults, with faults disabled, and with faults enabled. Run them with:
 
