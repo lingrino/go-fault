@@ -42,36 +42,36 @@ type Fault struct {
 	rand *rand.Rand
 }
 
-// FaultOption configures a Fault.
-type FaultOption interface {
+// Option configures a Fault.
+type Option interface {
 	applyFault(f *Fault)
 }
 
-type enabledFaultOption bool
+type enabledOption bool
 
-func (o enabledFaultOption) applyFault(f *Fault) {
+func (o enabledOption) applyFault(f *Fault) {
 	f.enabled = bool(o)
 }
 
 // WithEnabled determines if the fault should evaluate.
-func WithEnabled(e bool) FaultOption {
-	return enabledFaultOption(e)
+func WithEnabled(e bool) Option {
+	return enabledOption(e)
 }
 
-type injectPercentFaultOption float32
+type injectPercentOption float32
 
-func (o injectPercentFaultOption) applyFault(f *Fault) {
+func (o injectPercentOption) applyFault(f *Fault) {
 	f.injectPercent = float32(o)
 }
 
 // WithInjectPercent sets the percent of requests that run the injector. 0.0 <= p <= 1.0.
-func WithInjectPercent(p float32) FaultOption {
-	return injectPercentFaultOption(p)
+func WithInjectPercent(p float32) Option {
+	return injectPercentOption(p)
 }
 
-type pathBlacklistFaultOption []string
+type pathBlacklistOption []string
 
-func (o pathBlacklistFaultOption) applyFault(f *Fault) {
+func (o pathBlacklistOption) applyFault(f *Fault) {
 	blacklist := make(map[string]bool, len(o))
 	for _, path := range o {
 		blacklist[path] = true
@@ -80,13 +80,13 @@ func (o pathBlacklistFaultOption) applyFault(f *Fault) {
 }
 
 // WithPathBlacklist is a list of paths that the injector will not run against.
-func WithPathBlacklist(blacklist []string) FaultOption {
-	return pathBlacklistFaultOption(blacklist)
+func WithPathBlacklist(blacklist []string) Option {
+	return pathBlacklistOption(blacklist)
 }
 
-type pathWhitelistFaultOption []string
+type pathWhitelistOption []string
 
-func (o pathWhitelistFaultOption) applyFault(f *Fault) {
+func (o pathWhitelistOption) applyFault(f *Fault) {
 	whitelist := make(map[string]bool, len(o))
 	for _, path := range o {
 		whitelist[path] = true
@@ -95,12 +95,12 @@ func (o pathWhitelistFaultOption) applyFault(f *Fault) {
 }
 
 // WithPathWhitelist is, if set, a map of the only paths that the injector will run against.
-func WithPathWhitelist(whitelist []string) FaultOption {
-	return pathWhitelistFaultOption(whitelist)
+func WithPathWhitelist(whitelist []string) Option {
+	return pathWhitelistOption(whitelist)
 }
 
 type RandSeedOption interface {
-	FaultOption
+	Option
 	RandomInjectorOption
 }
 
@@ -116,7 +116,7 @@ func WithRandSeed(s int64) RandSeedOption {
 }
 
 // NewFault validates and sets the provided options and returns a Fault.
-func NewFault(i Injector, opts ...FaultOption) (*Fault, error) {
+func NewFault(i Injector, opts ...Option) (*Fault, error) {
 	// set the defaults.
 	fault := &Fault{
 		injector: i,

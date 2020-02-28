@@ -17,14 +17,14 @@ func TestNewFault(t *testing.T) {
 	tests := []struct {
 		name         string
 		giveInjector Injector
-		giveOptions  []FaultOption
+		giveOptions  []Option
 		wantFault    *Fault
 		wantErr      error
 	}{
 		{
 			name:         "all options",
 			giveInjector: newTestInjectorNoop(),
-			giveOptions: []FaultOption{
+			giveOptions: []Option{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
 				WithPathBlacklist([]string{"/donotinject"}),
@@ -56,7 +56,7 @@ func TestNewFault(t *testing.T) {
 		{
 			name:         "invalid percent",
 			giveInjector: newTestInjectorNoop(),
-			giveOptions: []FaultOption{
+			giveOptions: []Option{
 				WithInjectPercent(100.0),
 			},
 			wantFault: nil,
@@ -65,7 +65,7 @@ func TestNewFault(t *testing.T) {
 		{
 			name:         "empty options",
 			giveInjector: newTestInjectorNoop(),
-			giveOptions:  []FaultOption{},
+			giveOptions:  []Option{},
 			wantFault: &Fault{
 				enabled:       false,
 				injector:      &testInjectorNoop{},
@@ -99,14 +99,14 @@ func TestFaultHandler(t *testing.T) {
 	tests := []struct {
 		name         string
 		giveInjector Injector
-		giveOptions  []FaultOption
+		giveOptions  []Option
 		wantCode     int
 		wantBody     string
 	}{
 		{
 			name:         "not enabled",
 			giveInjector: newTestInjectorNoop(),
-			giveOptions: []FaultOption{
+			giveOptions: []Option{
 				WithEnabled(false),
 				WithInjectPercent(1.0),
 			},
@@ -116,7 +116,7 @@ func TestFaultHandler(t *testing.T) {
 		{
 			name:         "zero percent",
 			giveInjector: newTestInjectorNoop(),
-			giveOptions: []FaultOption{
+			giveOptions: []Option{
 				WithEnabled(true),
 				WithInjectPercent(0.0),
 			},
@@ -126,7 +126,7 @@ func TestFaultHandler(t *testing.T) {
 		{
 			name:         "100 percent 500s",
 			giveInjector: newTestInjector500s(),
-			giveOptions: []FaultOption{
+			giveOptions: []Option{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
 			},
@@ -136,7 +136,7 @@ func TestFaultHandler(t *testing.T) {
 		{
 			name:         "100 percent 500s with blacklist root",
 			giveInjector: newTestInjector500s(),
-			giveOptions: []FaultOption{
+			giveOptions: []Option{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
 				WithPathBlacklist([]string{"/"}),
@@ -147,7 +147,7 @@ func TestFaultHandler(t *testing.T) {
 		{
 			name:         "100 percent 500s with whitelist root",
 			giveInjector: newTestInjector500s(),
-			giveOptions: []FaultOption{
+			giveOptions: []Option{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
 				WithPathWhitelist([]string{"/"}),
@@ -158,7 +158,7 @@ func TestFaultHandler(t *testing.T) {
 		{
 			name:         "100 percent 500s with whitelist other",
 			giveInjector: newTestInjector500s(),
-			giveOptions: []FaultOption{
+			giveOptions: []Option{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
 				WithPathWhitelist([]string{"/onlyinject"}),
@@ -169,7 +169,7 @@ func TestFaultHandler(t *testing.T) {
 		{
 			name:         "100 percent 500s with whitelist and blacklist root",
 			giveInjector: newTestInjector500s(),
-			giveOptions: []FaultOption{
+			giveOptions: []Option{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
 				WithPathBlacklist([]string{"/"}),
@@ -181,7 +181,7 @@ func TestFaultHandler(t *testing.T) {
 		{
 			name:         "100 percent inject nothing",
 			giveInjector: newTestInjectorNoop(),
-			giveOptions: []FaultOption{
+			giveOptions: []Option{
 				WithEnabled(true),
 				WithInjectPercent(1.0),
 			},
