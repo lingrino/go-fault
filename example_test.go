@@ -15,11 +15,10 @@ func ExampleNewFault() {
 		log.Fatal(err)
 	}
 
-	_, err = fault.NewFault(fault.Options{
-		Enabled:           true,
-		Injector:          ei,
-		PercentOfRequests: 1.0,
-	})
+	_, err = fault.NewFault(ei,
+		fault.WithEnabled(true),
+		fault.WithInjectPercent(0.25),
+	)
 
 	fmt.Println(err)
 	// Output: <nil>
@@ -31,12 +30,11 @@ func ExampleNewFault_blacklist() {
 		log.Fatal(err)
 	}
 
-	_, err = fault.NewFault(fault.Options{
-		Enabled:           true,
-		Injector:          ei,
-		PercentOfRequests: 1.0,
-		PathBlacklist:     []string{"/ping", "/health"},
-	})
+	_, err = fault.NewFault(ei,
+		fault.WithEnabled(true),
+		fault.WithInjectPercent(0.25),
+		fault.WithPathBlacklist([]string{"/ping", "/health"}),
+	)
 
 	fmt.Println(err)
 	// Output: <nil>
@@ -48,12 +46,11 @@ func ExampleNewFault_whitelist() {
 		log.Fatal(err)
 	}
 
-	_, err = fault.NewFault(fault.Options{
-		Enabled:           true,
-		Injector:          ei,
-		PercentOfRequests: 1.0,
-		PathWhitelist:     []string{"/injecthere", "/andhere"},
-	})
+	_, err = fault.NewFault(ei,
+		fault.WithEnabled(true),
+		fault.WithInjectPercent(0.25),
+		fault.WithPathWhitelist([]string{"/injecthere", "/andhere"}),
+	)
 
 	fmt.Println(err)
 	// Output: <nil>
@@ -70,7 +67,7 @@ func ExampleNewChainInjector() {
 		log.Fatal(err)
 	}
 
-	_, err = fault.NewChainInjector(si, ri)
+	_, err = fault.NewChainInjector([]fault.Injector{si, ri})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -90,7 +87,7 @@ func ExampleNewRandomInjector() {
 		log.Fatal(err)
 	}
 
-	_, err = fault.NewRandomInjector(si, ri)
+	_, err = fault.NewRandomInjector([]fault.Injector{si, ri})
 	if err != nil {
 		log.Fatal(err)
 	}
