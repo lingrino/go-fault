@@ -130,17 +130,6 @@ type ErrorInjectorOption interface {
 	applyErrorInjector(i *ErrorInjector)
 }
 
-type statusCodeOption int
-
-func (o statusCodeOption) applyErrorInjector(i *ErrorInjector) {
-	i.statusCode = int(o)
-}
-
-// WithStatusCode sets the status code that should return.
-func WithStatusCode(c int) ErrorInjectorOption {
-	return statusCodeOption(c)
-}
-
 type statusTextOption string
 
 func (o statusTextOption) applyErrorInjector(i *ErrorInjector) {
@@ -153,13 +142,13 @@ func WithStatusText(t string) ErrorInjectorOption {
 }
 
 // NewErrorInjector returns an ErrorInjector that reponds with the configured status code.
-func NewErrorInjector(opts ...ErrorInjectorOption) (*ErrorInjector, error) {
+func NewErrorInjector(code int, opts ...ErrorInjectorOption) (*ErrorInjector, error) {
 	const placeholderStatusText = "go-fault replace with default code text"
 
 	// set the defaults.
 	// by default we return ErrInvalidHTTPCode since 0 is invalid.
 	ei := &ErrorInjector{
-		statusCode: 0,
+		statusCode: code,
 		statusText: placeholderStatusText,
 	}
 
@@ -198,17 +187,6 @@ type SlowInjectorOption interface {
 	applySlowInjector(i *SlowInjector)
 }
 
-type durationOption time.Duration
-
-func (o durationOption) applySlowInjector(i *SlowInjector) {
-	i.duration = time.Duration(o)
-}
-
-// WithDuration sets the duration that the injector will wait
-func WithDuration(d time.Duration) SlowInjectorOption {
-	return durationOption(d)
-}
-
 type sleepFunctionOption func(t time.Duration)
 
 func (o sleepFunctionOption) applySlowInjector(i *SlowInjector) {
@@ -221,10 +199,10 @@ func WithSleepFunction(f func(t time.Duration)) SlowInjectorOption {
 }
 
 // NewSlowInjector returns a SlowInjector that adds the configured latency.
-func NewSlowInjector(opts ...SlowInjectorOption) (*SlowInjector, error) {
+func NewSlowInjector(d time.Duration, opts ...SlowInjectorOption) (*SlowInjector, error) {
 	// set the defaults.
 	si := &SlowInjector{
-		duration: time.Duration(0),
+		duration: d,
 		sleep:    time.Sleep,
 	}
 

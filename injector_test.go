@@ -367,22 +367,16 @@ func TestNewErrorInjector(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		give    []ErrorInjectorOption
-		want    *ErrorInjector
-		wantErr error
+		name        string
+		giveCode    int
+		giveOptions []ErrorInjectorOption
+		want        *ErrorInjector
+		wantErr     error
 	}{
 		{
-			name:    "nil",
-			give:    nil,
-			want:    nil,
-			wantErr: ErrInvalidHTTPCode,
-		},
-		{
-			name: "only code",
-			give: []ErrorInjectorOption{
-				WithStatusCode(http.StatusCreated),
-			},
+			name:        "only code",
+			giveCode:    http.StatusCreated,
+			giveOptions: nil,
 			want: &ErrorInjector{
 				statusCode: http.StatusCreated,
 				statusText: http.StatusText(http.StatusCreated),
@@ -390,9 +384,9 @@ func TestNewErrorInjector(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "code with different text",
-			give: []ErrorInjectorOption{
-				WithStatusCode(http.StatusCreated),
+			name:     "code with different text",
+			giveCode: http.StatusCreated,
+			giveOptions: []ErrorInjectorOption{
 				WithStatusText(http.StatusText(http.StatusAccepted)),
 			},
 			want: &ErrorInjector{
@@ -402,9 +396,9 @@ func TestNewErrorInjector(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "code with random text",
-			give: []ErrorInjectorOption{
-				WithStatusCode(http.StatusTeapot),
+			name:     "code with random text",
+			giveCode: http.StatusTeapot,
+			giveOptions: []ErrorInjectorOption{
 				WithStatusText("wow very random"),
 			},
 			want: &ErrorInjector{
@@ -414,9 +408,9 @@ func TestNewErrorInjector(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "invalid code",
-			give: []ErrorInjectorOption{
-				WithStatusCode(0),
+			name:     "invalid code",
+			giveCode: 0,
+			giveOptions: []ErrorInjectorOption{
 				WithStatusText("invalid code"),
 			},
 			want:    nil,
@@ -429,7 +423,7 @@ func TestNewErrorInjector(t *testing.T) {
 		t.Run(fmt.Sprintf("%v", tt.name), func(t *testing.T) {
 			t.Parallel()
 
-			i, err := NewErrorInjector(tt.give...)
+			i, err := NewErrorInjector(tt.giveCode, tt.giveOptions...)
 
 			assert.Equal(t, tt.wantErr, err)
 			assert.Equal(t, tt.want, i)
@@ -442,23 +436,23 @@ func TestErrorInjectorHandler(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		give     []ErrorInjectorOption
-		wantCode int
-		wantBody string
+		name        string
+		giveCode    int
+		giveOptions []ErrorInjectorOption
+		wantCode    int
+		wantBody    string
 	}{
 		{
-			name: "only code",
-			give: []ErrorInjectorOption{
-				WithStatusCode(http.StatusInternalServerError),
-			},
-			wantCode: http.StatusInternalServerError,
-			wantBody: http.StatusText(http.StatusInternalServerError),
+			name:        "only code",
+			giveCode:    http.StatusInternalServerError,
+			giveOptions: nil,
+			wantCode:    http.StatusInternalServerError,
+			wantBody:    http.StatusText(http.StatusInternalServerError),
 		},
 		{
-			name: "custom text",
-			give: []ErrorInjectorOption{
-				WithStatusCode(http.StatusInternalServerError),
+			name:     "custom text",
+			giveCode: http.StatusInternalServerError,
+			giveOptions: []ErrorInjectorOption{
 				WithStatusText("very custom text"),
 			},
 			wantCode: http.StatusInternalServerError,
@@ -471,7 +465,7 @@ func TestErrorInjectorHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ei, err := NewErrorInjector(tt.give...)
+			ei, err := NewErrorInjector(tt.giveCode, tt.giveOptions...)
 			assert.NoError(t, err)
 
 			f, err := NewFault(ei,
@@ -493,14 +487,16 @@ func TestNewSlowInjector(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		give    []SlowInjectorOption
-		want    *SlowInjector
-		wantErr error
+		name         string
+		giveDuration time.Duration
+		giveOptions  []SlowInjectorOption
+		want         *SlowInjector
+		wantErr      error
 	}{
 		{
-			name: "nil",
-			give: nil,
+			name:         "nil",
+			giveDuration: 0,
+			giveOptions:  nil,
 			want: &SlowInjector{
 				duration: 0,
 				sleep:    time.Sleep,
@@ -508,8 +504,9 @@ func TestNewSlowInjector(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "empty",
-			give: []SlowInjectorOption{},
+			name:         "empty",
+			giveDuration: 0,
+			giveOptions:  []SlowInjectorOption{},
 			want: &SlowInjector{
 				duration: 0,
 				sleep:    time.Sleep,
@@ -517,10 +514,9 @@ func TestNewSlowInjector(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "custom duration",
-			give: []SlowInjectorOption{
-				WithDuration(time.Minute),
-			},
+			name:         "custom duration",
+			giveDuration: time.Minute,
+			giveOptions:  nil,
 			want: &SlowInjector{
 				duration: time.Minute,
 				sleep:    time.Sleep,
@@ -528,9 +524,9 @@ func TestNewSlowInjector(t *testing.T) {
 			wantErr: nil,
 		},
 		{
-			name: "custom sleep",
-			give: []SlowInjectorOption{
-				WithDuration(time.Minute),
+			name:         "custom sleep",
+			giveDuration: time.Minute,
+			giveOptions: []SlowInjectorOption{
 				WithSleepFunction(func(time.Duration) {}),
 			},
 			want: &SlowInjector{
@@ -543,10 +539,10 @@ func TestNewSlowInjector(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(fmt.Sprintf("%v", tt.give), func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			si, err := NewSlowInjector(tt.give...)
+			si, err := NewSlowInjector(tt.giveDuration, tt.giveOptions...)
 
 			assert.Equal(t, tt.wantErr, err)
 			assert.Equal(t, tt.want.duration, si.duration)
@@ -559,35 +555,37 @@ func TestSlowInjectorHandler(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		give     []SlowInjectorOption
-		wantCode int
-		wantBody string
+		name         string
+		giveDuration time.Duration
+		giveOptions  []SlowInjectorOption
+		wantCode     int
+		wantBody     string
 	}{
 		{
-			name:     "nil",
-			give:     nil,
-			wantCode: testHandlerCode,
-			wantBody: testHandlerBody,
+			name:         "nil",
+			giveDuration: 0,
+			giveOptions:  nil,
+			wantCode:     testHandlerCode,
+			wantBody:     testHandlerBody,
 		},
 		{
-			name:     "empty",
-			give:     []SlowInjectorOption{},
-			wantCode: testHandlerCode,
-			wantBody: testHandlerBody,
+			name:         "empty",
+			giveDuration: 0,
+			giveOptions:  []SlowInjectorOption{},
+			wantCode:     testHandlerCode,
+			wantBody:     testHandlerBody,
 		},
 		{
-			name: "with time.Sleep",
-			give: []SlowInjectorOption{
-				WithDuration(time.Nanosecond),
-			},
-			wantCode: testHandlerCode,
-			wantBody: testHandlerBody,
+			name:         "with time.Sleep",
+			giveDuration: time.Microsecond,
+			giveOptions:  nil,
+			wantCode:     testHandlerCode,
+			wantBody:     testHandlerBody,
 		},
 		{
-			name: "with custom function",
-			give: []SlowInjectorOption{
-				WithDuration(time.Hour),
+			name:         "with custom function",
+			giveDuration: time.Hour,
+			giveOptions: []SlowInjectorOption{
 				WithSleepFunction(func(time.Duration) {}),
 			},
 			wantCode: testHandlerCode,
@@ -600,7 +598,7 @@ func TestSlowInjectorHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			si, err := NewSlowInjector(tt.give...)
+			si, err := NewSlowInjector(tt.giveDuration, tt.giveOptions...)
 			assert.NoError(t, err)
 
 			f, err := NewFault(si,
