@@ -145,8 +145,7 @@ func WithStatusText(t string) ErrorInjectorOption {
 func NewErrorInjector(code int, opts ...ErrorInjectorOption) (*ErrorInjector, error) {
 	const placeholderStatusText = "go-fault replace with default code text"
 
-	// set the defaults.
-	// by default we return ErrInvalidHTTPCode since 0 is invalid.
+	// set the defaults. by default we return ErrInvalidHTTPCode since 0 is invalid.
 	ei := &ErrorInjector{
 		statusCode: code,
 		statusText: placeholderStatusText,

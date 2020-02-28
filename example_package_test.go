@@ -56,7 +56,6 @@ func Example() {
 	// Verify the correct response
 	fmt.Println(rr.Code)
 	fmt.Println(rr.Body.String())
-	// Output:
-	// 500
+	// Output: 500
 	// Internal Server Error
 }
