@@ -193,22 +193,53 @@ type SlowInjector struct {
 	sleep    func(t time.Duration)
 }
 
+// SlowInjectorOption configures an SlowInjector.
+type SlowInjectorOption interface {
+	applySlowInjector(i *SlowInjector)
+}
+
+type durationOption time.Duration
+
+func (o durationOption) applySlowInjector(i *SlowInjector) {
+	i.duration = time.Duration(o)
+}
+
+// WithDuration sets the duration that the injector will wait
+func WithDuration(d time.Duration) SlowInjectorOption {
+	return durationOption(d)
+}
+
+type sleepFunctionOption func(t time.Duration)
+
+func (o sleepFunctionOption) applySlowInjector(i *SlowInjector) {
+	i.sleep = o
+}
+
+// WithSleepFunction sets the function that will be used to wait the time.Duration
+func WithSleepFunction(f func(t time.Duration)) SlowInjectorOption {
+	return sleepFunctionOption(f)
+}
+
 // NewSlowInjector returns a SlowInjector that adds the configured latency.
-func NewSlowInjector(d time.Duration) (*SlowInjector, error) {
-	return &SlowInjector{
-		duration: d,
+func NewSlowInjector(opts ...SlowInjectorOption) (*SlowInjector, error) {
+	// set the defaults.
+	si := &SlowInjector{
+		duration: time.Duration(0),
 		sleep:    time.Sleep,
-	}, nil
+	}
+
+	// apply the options.
+	for _, opt := range opts {
+		opt.applySlowInjector(si)
+	}
+
+	return si, nil
 }
 
 // Handler waits the configured duration and then continues the request.
 func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if i != nil {
-			if i.sleep != nil {
-				i.sleep(i.duration)
-			}
-		}
+		i.sleep(i.duration)
 		next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSlowInjector))
 	})
 }

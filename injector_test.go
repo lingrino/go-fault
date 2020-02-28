@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -487,113 +488,131 @@ func TestErrorInjectorHandler(t *testing.T) {
 	}
 }
 
-// // TestNewSlowInjector tests NewSlowInjector.
-// func TestNewSlowInjector(t *testing.T) {
-// 	t.Parallel()
+// TestNewSlowInjector tests NewSlowInjector.
+func TestNewSlowInjector(t *testing.T) {
+	t.Parallel()
 
-// 	tests := []struct {
-// 		give    time.Duration
-// 		want    *SlowInjector
-// 		wantErr error
-// 	}{
-// 		{
-// 			give: 0,
-// 			want: &SlowInjector{
-// 				duration: 0,
-// 				sleep:    time.Sleep,
-// 			},
-// 			wantErr: nil,
-// 		},
-// 		{
-// 			give: time.Millisecond,
-// 			want: &SlowInjector{
-// 				duration: time.Millisecond,
-// 				sleep:    time.Sleep,
-// 			},
-// 			wantErr: nil,
-// 		},
-// 		{
-// 			give: time.Millisecond * 1000,
-// 			want: &SlowInjector{
-// 				duration: time.Second,
-// 				sleep:    time.Sleep,
-// 			},
-// 			wantErr: nil,
-// 		},
-// 		{
-// 			give: time.Hour * 1000000,
-// 			want: &SlowInjector{
-// 				duration: time.Hour * 1000000,
-// 				sleep:    time.Sleep,
-// 			},
-// 			wantErr: nil,
-// 		},
-// 	}
+	tests := []struct {
+		name    string
+		give    []SlowInjectorOption
+		want    *SlowInjector
+		wantErr error
+	}{
+		{
+			name: "nil",
+			give: nil,
+			want: &SlowInjector{
+				duration: 0,
+				sleep:    time.Sleep,
+			},
+			wantErr: nil,
+		},
+		{
+			name: "empty",
+			give: []SlowInjectorOption{},
+			want: &SlowInjector{
+				duration: 0,
+				sleep:    time.Sleep,
+			},
+			wantErr: nil,
+		},
+		{
+			name: "custom duration",
+			give: []SlowInjectorOption{
+				WithDuration(time.Minute),
+			},
+			want: &SlowInjector{
+				duration: time.Minute,
+				sleep:    time.Sleep,
+			},
+			wantErr: nil,
+		},
+		{
+			name: "custom sleep",
+			give: []SlowInjectorOption{
+				WithDuration(time.Minute),
+				WithSleepFunction(func(time.Duration) {}),
+			},
+			want: &SlowInjector{
+				duration: time.Minute,
+				sleep:    func(time.Duration) {},
+			},
+			wantErr: nil,
+		},
+	}
 
-// 	for _, tt := range tests {
-// 		tt := tt
-// 		t.Run(fmt.Sprintf("%v", tt.give), func(t *testing.T) {
-// 			t.Parallel()
+	for _, tt := range tests {
+		tt := tt
+		t.Run(fmt.Sprintf("%v", tt.give), func(t *testing.T) {
+			t.Parallel()
 
-// 			i, err := NewSlowInjector(tt.give)
+			si, err := NewSlowInjector(tt.give...)
 
-// 			assert.Equal(t, tt.wantErr, err)
-// 			assert.Equal(t, tt.want.duration, i.duration)
-// 		})
-// 	}
-// }
+			assert.Equal(t, tt.wantErr, err)
+			assert.Equal(t, tt.want.duration, si.duration)
+		})
+	}
+}
 
-// // TestSlowInjectorHandler tests SlowInjector.Handler.
-// func TestSlowInjectorHandler(t *testing.T) {
-// 	t.Parallel()
+// TestSlowInjectorHandler tests SlowInjector.Handler.
+func TestSlowInjectorHandler(t *testing.T) {
+	t.Parallel()
 
-// 	tests := []struct {
-// 		name     string
-// 		give     *SlowInjector
-// 		wantCode int
-// 		wantBody string
-// 	}{
-// 		{
-// 			name:     "nil",
-// 			give:     nil,
-// 			wantCode: testHandlerCode,
-// 			wantBody: testHandlerBody,
-// 		},
-// 		{
-// 			name:     "empty",
-// 			give:     &SlowInjector{},
-// 			wantCode: testHandlerCode,
-// 			wantBody: testHandlerBody,
-// 		},
-// 		{
-// 			name: "valid",
-// 			give: &SlowInjector{
-// 				duration: time.Millisecond,
-// 				sleep:    func(d time.Duration) {},
-// 			},
-// 			wantCode: testHandlerCode,
-// 			wantBody: testHandlerBody,
-// 		},
-// 	}
+	tests := []struct {
+		name     string
+		give     []SlowInjectorOption
+		wantCode int
+		wantBody string
+	}{
+		{
+			name:     "nil",
+			give:     nil,
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name:     "empty",
+			give:     []SlowInjectorOption{},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "with time.Sleep",
+			give: []SlowInjectorOption{
+				WithDuration(time.Nanosecond),
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
+			name: "with custom function",
+			give: []SlowInjectorOption{
+				WithDuration(time.Hour),
+				WithSleepFunction(func(time.Duration) {}),
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+	}
 
-// 	for _, tt := range tests {
-// 		tt := tt
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			t.Parallel()
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-// 			f := &Fault{
-// 				opt: Options{
-// 					Enabled:           true,
-// 					Injector:          tt.give,
-// 					PercentOfRequests: 1.0,
-// 				},
-// 				rand: rand.New(rand.NewSource(defaultRandSeed)),
-// 			}
+			si, err := NewSlowInjector(tt.give...)
+			assert.NoError(t, err)
 
-// 			rr := testRequest(t, f)
+			f, err := NewFault(si,
+				WithEnabled(true),
+				WithInjectPercent(1.0),
+			)
+			assert.NoError(t, err)
 
-// 			assert.Equal(t, tt.wantCode, rr.Code)
-// 			assert.Equal(t, tt.wantBody, strings.TrimSpace(rr.Body.String()))
-// 		})
-// 	}
-// }
+			rr := testRequest(t, f)
+
+			assert.Equal(t, tt.wantCode, rr.Code)
+			assert.Equal(t, tt.wantBody, strings.TrimSpace(rr.Body.String()))
+		})
+	}
+}
