@@ -61,10 +61,10 @@ type RandomInjector struct {
 
 // RandomInjectorOption configures a RandomInjector.
 type RandomInjectorOption interface {
-	applyErrorInjector(i *RandomInjector)
+	applyRandomInjector(i *RandomInjector)
 }
 
-func (o randSeedOption) applyErrorInjector(i *RandomInjector) {
+func (o randSeedOption) applyRandomInjector(i *RandomInjector) {
 	i.randSeed = int64(o)
 }
 
@@ -76,7 +76,7 @@ func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInje
 	}
 
 	for _, opt := range opts {
-		opt.applyErrorInjector(randomInjector)
+		opt.applyRandomInjector(randomInjector)
 	}
 
 	for _, i := range is {
