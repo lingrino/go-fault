@@ -36,18 +36,19 @@ const (
 	ContextValueSlowInjector ContextString = "slow-injector"
 )
 
-// updateRequestContextValue takes a request and updates ContextValue (from ContextKey) with the provided
-// ContextString and then returns a shallow copy of the request
+// updateRequestContextValue takes a request and updates ContextValue (from ContextKey) with the
+// provided ContextString and then returns a shallow copy of the request
 func updateRequestContextValue(r *http.Request, v ContextString) *http.Request {
-	if r != nil {
-		ctx := r.Context()
-
-		val, ok := ctx.Value(ContextKey).(ContextValue)
-		if !ok {
-			return r.WithContext(context.WithValue(ctx, ContextKey, ContextValue{v}))
-		}
-		val = append(val, v)
-		return r.WithContext(context.WithValue(ctx, ContextKey, val))
+	if r == nil {
+		return r
 	}
-	return r
+
+	ctx := r.Context()
+
+	val, ok := ctx.Value(ContextKey).(ContextValue)
+	if !ok {
+		return r.WithContext(context.WithValue(ctx, ContextKey, ContextValue{v}))
+	}
+	val = append(val, v)
+	return r.WithContext(context.WithValue(ctx, ContextKey, val))
 }

@@ -24,18 +24,17 @@ func Example() {
 	}
 
 	// Chain slow and error injectors together
-	ci, err := fault.NewChainInjector(si, ei)
+	ci, err := fault.NewChainInjector([]fault.Injector{si, ei})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// Run our fault injection 100% of the time
-	f, err := fault.NewFault(fault.Options{
-		Enabled:           true,
-		Injector:          ci,
-		PercentOfRequests: 1.0,
-		PathBlacklist:     []string{"/ping", "/health"},
-	})
+	f, err := fault.NewFault(ci,
+		fault.WithEnabled(true),
+		fault.WithParticipation(1.0),
+		fault.WithPathBlacklist([]string{"/ping", "/health"}),
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,7 +56,6 @@ func Example() {
 	// Verify the correct response
 	fmt.Println(rr.Code)
 	fmt.Println(rr.Body.String())
-	// Output:
-	// 500
+	// Output: 500
 	// Internal Server Error
 }

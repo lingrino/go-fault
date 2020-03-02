@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	// defaultRandSeed is used when a random seed is not set explicitly
+	// defaultRandSeed is used when a random seed is not set explicitly.
 	defaultRandSeed = 1
 )
 
@@ -19,113 +19,156 @@ var (
 	ErrInvalidPercent = errors.New("percent must be 0.0 <= percent <= 1.0")
 )
 
-// Fault is the main struct and combines an Injector with configuration.
+// Fault combines an Injector with options on when to use that injector.
 type Fault struct {
-	// opt holds all of our user provided fault options
-	opt Options
+	// enabled determines if the fault should evaluate.
+	enabled bool
 
-	// pathBlacklist is a dict representation of Options.PathBlacklist that is populated in
-	// NewFault and used to make path lookups faster.
+	// injector is the Injector that will be injected.
+	injector Injector
+
+	// participation is the percent of requests that run the injector. 0.0 <= p <= 1.0.
+	participation float32
+
+	// pathBlacklist is a map of paths that the injector will not run against.
 	pathBlacklist map[string]bool
 
-	// pathWhitelist is a dict representation of Options.PathWhitelist that is populated in
-	// NewFault and used to make path lookups faster.
+	// pathWhitelist, if set, is a map of the only paths that the injector will run against.
 	pathWhitelist map[string]bool
 
-	// randSeed is used to seed our random number generator
+	// randSeed is a number to seed rand with.
+	randSeed int64
+
+	// rand is our random number source.
 	rand *rand.Rand
 }
 
-// Options holds configuration for a Fault.
-type Options struct {
-	// Enabled determines if the fault middleware should evaluate.
-	Enabled bool
-
-	// PercentOfRequests is the percent of requests that should have the fault injected. 0.0 <=
-	// percent <= 1.0
-	PercentOfRequests float32
-
-	// Injector is the interface that returns the handler we will inject.
-	Injector Injector
-
-	// PathBlacklist is a list of paths for which faults will never be injected
-	PathBlacklist []string
-
-	// PathWhitelist is a list of paths for which faults will be evaluated. If PathWhitelist is
-	// empty then faults will evaluate on all paths.
-	PathWhitelist []string
-
-	// Reporter is an interface that receives fault event data at Reporter.Report and can act on
-	// that data. By default we do not report on events and Reporter is nil.
-	Reporter Reporter
-
-	// RandSeed is a number to seed our random gnerator with. Only applies to Fault randomness,
-	// not randomness used by injectors.
-	RandSeed int64
+// Option configures a Fault.
+type Option interface {
+	applyFault(f *Fault) error
 }
 
-// NewFault validates the provided options and returns a Fault struct.
-func NewFault(o Options) (*Fault, error) {
-	output := &Fault{}
+type enabledOption bool
 
-	if o.Injector == nil {
+func (o enabledOption) applyFault(f *Fault) error {
+	f.enabled = bool(o)
+	return nil
+}
+
+// WithEnabled determines if the fault should evaluate.
+func WithEnabled(e bool) Option {
+	return enabledOption(e)
+}
+
+type participationOption float32
+
+func (o participationOption) applyFault(f *Fault) error {
+	if o < 0 || o > 1.0 {
+		return ErrInvalidPercent
+	}
+	f.participation = float32(o)
+	return nil
+}
+
+// WithParticipation sets the percent of requests that run the injector. 0.0 <= p <= 1.0.
+func WithParticipation(p float32) Option {
+	return participationOption(p)
+}
+
+type pathBlacklistOption []string
+
+func (o pathBlacklistOption) applyFault(f *Fault) error {
+	blacklist := make(map[string]bool, len(o))
+	for _, path := range o {
+		blacklist[path] = true
+	}
+	f.pathBlacklist = blacklist
+	return nil
+}
+
+// WithPathBlacklist is a list of paths that the injector will not run against.
+func WithPathBlacklist(blacklist []string) Option {
+	return pathBlacklistOption(blacklist)
+}
+
+type pathWhitelistOption []string
+
+func (o pathWhitelistOption) applyFault(f *Fault) error {
+	whitelist := make(map[string]bool, len(o))
+	for _, path := range o {
+		whitelist[path] = true
+	}
+	f.pathWhitelist = whitelist
+	return nil
+}
+
+// WithPathWhitelist is, if set, a map of the only paths that the injector will run against.
+func WithPathWhitelist(whitelist []string) Option {
+	return pathWhitelistOption(whitelist)
+}
+
+type RandSeedOption interface {
+	Option
+	RandomInjectorOption
+}
+
+type randSeedOption int64
+
+func (o randSeedOption) applyFault(f *Fault) error {
+	f.randSeed = int64(o)
+	return nil
+}
+
+// WithRandSeed sets the seed for fault.rand
+func WithRandSeed(s int64) RandSeedOption {
+	return randSeedOption(s)
+}
+
+// NewFault validates and sets the provided options and returns a Fault.
+func NewFault(i Injector, opts ...Option) (*Fault, error) {
+	if i == nil {
 		return nil, ErrNilInjector
 	}
 
-	if o.PercentOfRequests < 0 || o.PercentOfRequests > 1.0 {
-		return nil, ErrInvalidPercent
+	// set the defaults.
+	fault := &Fault{
+		injector: i,
+		randSeed: defaultRandSeed,
 	}
 
-	if len(o.PathBlacklist) > 0 {
-		output.pathBlacklist = make(map[string]bool, len(o.PathBlacklist))
-		for _, path := range o.PathBlacklist {
-			output.pathBlacklist[path] = true
+	// apply the list of options to fault.
+	for _, opt := range opts {
+		err := opt.applyFault(fault)
+		if err != nil {
+			return nil, err
 		}
 	}
 
-	if len(o.PathWhitelist) > 0 {
-		output.pathWhitelist = make(map[string]bool, len(o.PathWhitelist))
-		for _, path := range o.PathWhitelist {
-			output.pathWhitelist[path] = true
-		}
-	}
+	// set our random source with the provided seed.
+	fault.rand = rand.New(rand.NewSource(fault.randSeed))
 
-	if o.Reporter == nil {
-		o.Reporter = NewNoopReporter()
-	}
-
-	// We assume that 0 is unspecified
-	if o.RandSeed != 0 {
-		output.rand = rand.New(rand.NewSource(o.RandSeed))
-	} else {
-		output.rand = rand.New(rand.NewSource(defaultRandSeed))
-	}
-
-	output.opt = o
-
-	return output, nil
+	return fault, nil
 }
 
-// Handler returns the main fault handler, which runs Injector.Handler a percent of the time.
+// Handler determines if the Injector should execute and runs it if so.
 func (f *Fault) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// By default faults do not evaluate. Here we go through conditions where faults
+		// will evaluate, if everything is configured correctly.
 		var shouldEvaluate bool
 
-		// By default faults should not evaluate. Here we go through conditions where faults
-		// will evaluate, if everything is configured correctly
-
-		// f.opt.Enabled is the first check, to prioritize speed when faults are disabled
-		if f.opt.Enabled && f.opt.Injector != nil {
-			// If path is in blacklist, do not evaluate
+		// enabled is the first check, to prioritize speed when faults are disabled.
+		if f.enabled {
+			// if path is in blacklist, do not evaluate.
 			if _, ok := f.pathBlacklist[r.URL.Path]; !ok {
-				// If whitelist exists and path is not in it, do not evaluate
+				// if whitelist exists and path is not in it, do not evaluate.
 				if len(f.pathWhitelist) > 0 {
-					// If path is in the whitelist, evaluate
+					// if path is in the whitelist, evaluate.
 					if _, ok := f.pathWhitelist[r.URL.Path]; ok {
 						shouldEvaluate = true
 					}
 				} else {
-					// If whitelist does not exist, evaluate
+					// if whitelist does not exist, evaluate.
 					shouldEvaluate = true
 				}
 			}
@@ -133,8 +176,14 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 			r = updateRequestContextValue(r, ContextValueDisabled)
 		}
 
-		if shouldEvaluate && f.percentDo() {
-			f.opt.Injector.Handler(next).ServeHTTP(w, updateRequestContextValue(r, ContextValueInjected))
+		// if all conditions pass, check if we're randomly selected to participate
+		if shouldEvaluate {
+			shouldEvaluate = f.participate()
+		}
+
+		// run the injector if shouldEvaluate
+		if shouldEvaluate {
+			f.injector.Handler(next).ServeHTTP(w, updateRequestContextValue(r, ContextValueInjected))
 		} else {
 			f.opt.Reporter.Report(reflect.ValueOf(*f).Type().Name(), StateSkipped)
 			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSkipped))
@@ -142,15 +191,13 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 	})
 }
 
-// percentDo takes a percent (0.0 <= per <= 1.0) and randomly returns true that percent of the time.
-// Numbers provided outside of [0.0,1.0] will always return false.
-func (f *Fault) percentDo() bool {
-	var proceed bool
-
+// participate randomly decides (returns true) if the injector should run based on f.participation.
+// Numbers outside of [0.0,1.0] will always return false.
+func (f *Fault) participate() bool {
 	rn := f.rand.Float32()
-	if rn < f.opt.PercentOfRequests && f.opt.PercentOfRequests <= 1.0 {
+	if rn < f.participation && f.participation <= 1.0 {
 		return true
 	}
 
-	return proceed
+	return false
 }
