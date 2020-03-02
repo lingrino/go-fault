@@ -52,10 +52,10 @@ func TestNewChainInjector(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			i, err := NewChainInjector(tt.give)
+			ci, err := NewChainInjector(tt.give)
 
 			assert.Equal(t, tt.wantErr, err)
-			assert.Equal(t, len(tt.give), len(i.middlewares))
+			assert.Equal(t, len(tt.give), len(ci.middlewares))
 		})
 	}
 }
@@ -207,6 +207,17 @@ func TestNewRandomInjector(t *testing.T) {
 			wantRand: rand.New(rand.NewSource(100)),
 			wantErr:  nil,
 		},
+		{
+			name: "option error",
+			giveInjector: []Injector{
+				newTestInjectorNoop(),
+			},
+			giveOptions: []RandomInjectorOption{
+				withError(),
+			},
+			wantRand: rand.New(rand.NewSource(defaultRandSeed)),
+			wantErr:  errErrorOption,
+		},
 	}
 
 	for _, tt := range tests {
@@ -214,10 +225,15 @@ func TestNewRandomInjector(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			i, err := NewRandomInjector(tt.giveInjector, tt.giveOptions...)
+			ri, err := NewRandomInjector(tt.giveInjector, tt.giveOptions...)
 
 			assert.Equal(t, tt.wantErr, err)
-			assert.Equal(t, len(tt.giveInjector), len(i.middlewares))
+			if tt.wantErr == nil {
+				assert.Equal(t, tt.wantRand, ri.rand)
+				assert.Equal(t, len(tt.giveInjector), len(ri.middlewares))
+			} else {
+				assert.Nil(t, ri)
+			}
 		})
 	}
 }
@@ -322,10 +338,10 @@ func TestNewRejectInjector(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			i, err := NewRejectInjector()
+			ri, err := NewRejectInjector()
 
 			assert.Equal(t, tt.wantErr, err)
-			assert.Equal(t, tt.want, i)
+			assert.Equal(t, tt.want, ri)
 		})
 	}
 }
@@ -416,6 +432,15 @@ func TestNewErrorInjector(t *testing.T) {
 			want:    nil,
 			wantErr: ErrInvalidHTTPCode,
 		},
+		{
+			name:     "option error",
+			giveCode: 200,
+			giveOptions: []ErrorInjectorOption{
+				withError(),
+			},
+			want:    nil,
+			wantErr: errErrorOption,
+		},
 	}
 
 	for _, tt := range tests {
@@ -423,10 +448,10 @@ func TestNewErrorInjector(t *testing.T) {
 		t.Run(fmt.Sprintf("%v", tt.name), func(t *testing.T) {
 			t.Parallel()
 
-			i, err := NewErrorInjector(tt.giveCode, tt.giveOptions...)
+			ei, err := NewErrorInjector(tt.giveCode, tt.giveOptions...)
 
 			assert.Equal(t, tt.wantErr, err)
-			assert.Equal(t, tt.want, i)
+			assert.Equal(t, tt.want, ei)
 		})
 	}
 }
@@ -535,6 +560,15 @@ func TestNewSlowInjector(t *testing.T) {
 			},
 			wantErr: nil,
 		},
+		{
+			name:         "option error",
+			giveDuration: time.Minute,
+			giveOptions: []SlowInjectorOption{
+				withError(),
+			},
+			want:    nil,
+			wantErr: errErrorOption,
+		},
 	}
 
 	for _, tt := range tests {
@@ -545,7 +579,12 @@ func TestNewSlowInjector(t *testing.T) {
 			si, err := NewSlowInjector(tt.giveDuration, tt.giveOptions...)
 
 			assert.Equal(t, tt.wantErr, err)
-			assert.Equal(t, tt.want.duration, si.duration)
+			if tt.wantErr == nil {
+				assert.Equal(t, tt.want.duration, si.duration)
+			} else {
+				assert.Nil(t, si)
+			}
+
 		})
 	}
 }

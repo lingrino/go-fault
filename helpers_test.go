@@ -1,6 +1,7 @@
 package fault
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -125,4 +126,38 @@ func (i *testInjectorTwoTeapot) Handler(next http.Handler) http.Handler {
 		fmt.Fprint(w, "two")
 		next.ServeHTTP(w, r)
 	})
+}
+
+var (
+	errErrorOption = errors.New("intentional error for tests")
+)
+
+// errorOption simply returns an error when passed as an option
+type errorOption interface {
+	Option
+	RandomInjectorOption
+	ErrorInjectorOption
+	SlowInjectorOption
+}
+
+type errorOptionBool bool
+
+func (o errorOptionBool) applyFault(f *Fault) error {
+	return errErrorOption
+}
+
+func (o errorOptionBool) applyRandomInjector(f *RandomInjector) error {
+	return errErrorOption
+}
+
+func (o errorOptionBool) applyErrorInjector(f *ErrorInjector) error {
+	return errErrorOption
+}
+
+func (o errorOptionBool) applySlowInjector(f *SlowInjector) error {
+	return errErrorOption
+}
+
+func withError() errorOption {
+	return errorOptionBool(true)
 }

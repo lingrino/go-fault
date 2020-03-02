@@ -63,6 +63,15 @@ func TestNewFault(t *testing.T) {
 			wantErr:   ErrInvalidPercent,
 		},
 		{
+			name:         "option error",
+			giveInjector: newTestInjectorNoop(),
+			giveOptions: []Option{
+				withError(),
+			},
+			wantFault: nil,
+			wantErr:   errErrorOption,
+		},
+		{
 			name:         "empty options",
 			giveInjector: newTestInjectorNoop(),
 			giveOptions:  []Option{},

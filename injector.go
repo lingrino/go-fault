@@ -61,11 +61,12 @@ type RandomInjector struct {
 
 // RandomInjectorOption configures a RandomInjector.
 type RandomInjectorOption interface {
-	applyRandomInjector(i *RandomInjector)
+	applyRandomInjector(i *RandomInjector) error
 }
 
-func (o randSeedOption) applyRandomInjector(i *RandomInjector) {
+func (o randSeedOption) applyRandomInjector(i *RandomInjector) error {
 	i.randSeed = int64(o)
+	return nil
 }
 
 // NewRandomInjector combines many injectors into a single random injector. When the random injector
@@ -76,7 +77,10 @@ func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInje
 	}
 
 	for _, opt := range opts {
-		opt.applyRandomInjector(randomInjector)
+		err := opt.applyRandomInjector(randomInjector)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	for _, i := range is {
@@ -127,13 +131,14 @@ type ErrorInjector struct {
 
 // ErrorInjectorOption configures an ErrorInjector.
 type ErrorInjectorOption interface {
-	applyErrorInjector(i *ErrorInjector)
+	applyErrorInjector(i *ErrorInjector) error
 }
 
 type statusTextOption string
 
-func (o statusTextOption) applyErrorInjector(i *ErrorInjector) {
+func (o statusTextOption) applyErrorInjector(i *ErrorInjector) error {
 	i.statusText = string(o)
+	return nil
 }
 
 // WithStatusText sets the status text that should return.
@@ -153,7 +158,10 @@ func NewErrorInjector(code int, opts ...ErrorInjectorOption) (*ErrorInjector, er
 
 	// apply the options.
 	for _, opt := range opts {
-		opt.applyErrorInjector(ei)
+		err := opt.applyErrorInjector(ei)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// sanitize the options.
@@ -182,13 +190,14 @@ type SlowInjector struct {
 
 // SlowInjectorOption configures an SlowInjector.
 type SlowInjectorOption interface {
-	applySlowInjector(i *SlowInjector)
+	applySlowInjector(i *SlowInjector) error
 }
 
 type sleepFunctionOption func(t time.Duration)
 
-func (o sleepFunctionOption) applySlowInjector(i *SlowInjector) {
+func (o sleepFunctionOption) applySlowInjector(i *SlowInjector) error {
 	i.sleep = o
+	return nil
 }
 
 // WithSleepFunction sets the function that will be used to wait the time.Duration
@@ -206,7 +215,10 @@ func NewSlowInjector(d time.Duration, opts ...SlowInjectorOption) (*SlowInjector
 
 	// apply the options.
 	for _, opt := range opts {
-		opt.applySlowInjector(si)
+		err := opt.applySlowInjector(si)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return si, nil

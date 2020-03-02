@@ -23,7 +23,7 @@ type Fault struct {
 	// enabled determines if the fault should evaluate.
 	enabled bool
 
-	// injector Injector that will be injected.
+	// injector is the Injector that will be injected.
 	injector Injector
 
 	// participation is the percent of requests that run the injector. 0.0 <= p <= 1.0.
@@ -44,13 +44,14 @@ type Fault struct {
 
 // Option configures a Fault.
 type Option interface {
-	applyFault(f *Fault)
+	applyFault(f *Fault) error
 }
 
 type enabledOption bool
 
-func (o enabledOption) applyFault(f *Fault) {
+func (o enabledOption) applyFault(f *Fault) error {
 	f.enabled = bool(o)
+	return nil
 }
 
 // WithEnabled determines if the fault should evaluate.
@@ -60,8 +61,12 @@ func WithEnabled(e bool) Option {
 
 type participationOption float32
 
-func (o participationOption) applyFault(f *Fault) {
+func (o participationOption) applyFault(f *Fault) error {
+	if o < 0 || o > 1.0 {
+		return ErrInvalidPercent
+	}
 	f.participation = float32(o)
+	return nil
 }
 
 // WithParticipation sets the percent of requests that run the injector. 0.0 <= p <= 1.0.
@@ -71,12 +76,13 @@ func WithParticipation(p float32) Option {
 
 type pathBlacklistOption []string
 
-func (o pathBlacklistOption) applyFault(f *Fault) {
+func (o pathBlacklistOption) applyFault(f *Fault) error {
 	blacklist := make(map[string]bool, len(o))
 	for _, path := range o {
 		blacklist[path] = true
 	}
 	f.pathBlacklist = blacklist
+	return nil
 }
 
 // WithPathBlacklist is a list of paths that the injector will not run against.
@@ -86,12 +92,13 @@ func WithPathBlacklist(blacklist []string) Option {
 
 type pathWhitelistOption []string
 
-func (o pathWhitelistOption) applyFault(f *Fault) {
+func (o pathWhitelistOption) applyFault(f *Fault) error {
 	whitelist := make(map[string]bool, len(o))
 	for _, path := range o {
 		whitelist[path] = true
 	}
 	f.pathWhitelist = whitelist
+	return nil
 }
 
 // WithPathWhitelist is, if set, a map of the only paths that the injector will run against.
@@ -106,8 +113,9 @@ type RandSeedOption interface {
 
 type randSeedOption int64
 
-func (o randSeedOption) applyFault(f *Fault) {
+func (o randSeedOption) applyFault(f *Fault) error {
 	f.randSeed = int64(o)
+	return nil
 }
 
 // WithRandSeed sets the seed for fault.rand
@@ -117,6 +125,10 @@ func WithRandSeed(s int64) RandSeedOption {
 
 // NewFault validates and sets the provided options and returns a Fault.
 func NewFault(i Injector, opts ...Option) (*Fault, error) {
+	if i == nil {
+		return nil, ErrNilInjector
+	}
+
 	// set the defaults.
 	fault := &Fault{
 		injector: i,
@@ -125,15 +137,10 @@ func NewFault(i Injector, opts ...Option) (*Fault, error) {
 
 	// apply the list of options to fault.
 	for _, opt := range opts {
-		opt.applyFault(fault)
-	}
-
-	// sanitize the options.
-	if fault.injector == nil {
-		return nil, ErrNilInjector
-	}
-	if fault.participation < 0 || fault.participation > 1.0 {
-		return nil, ErrInvalidPercent
+		err := opt.applyFault(fault)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// set our random source with the provided seed.
