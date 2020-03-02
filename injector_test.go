@@ -322,14 +322,36 @@ func TestNewRejectInjector(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		want    *RejectInjector
-		wantErr error
+		name        string
+		giveOptions []RejectInjectorOption
+		want        *RejectInjector
+		wantErr     error
 	}{
 		{
-			name:    "valid",
-			want:    &RejectInjector{},
+			name:        "no options",
+			giveOptions: []RejectInjectorOption{},
+			want: &RejectInjector{
+				reporter: &NoopReporter{},
+			},
 			wantErr: nil,
+		},
+		{
+			name: "custom reporter",
+			giveOptions: []RejectInjectorOption{
+				WithReporter(newTestReporter()),
+			},
+			want: &RejectInjector{
+				reporter: &testReporter{},
+			},
+			wantErr: nil,
+		},
+		{
+			name: "option error",
+			giveOptions: []RejectInjectorOption{
+				withError(),
+			},
+			want:    nil,
+			wantErr: errErrorOption,
 		},
 	}
 
@@ -338,7 +360,7 @@ func TestNewRejectInjector(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ri, err := NewRejectInjector()
+			ri, err := NewRejectInjector(tt.giveOptions...)
 
 			assert.Equal(t, tt.wantErr, err)
 			assert.Equal(t, tt.want, ri)
@@ -396,6 +418,7 @@ func TestNewErrorInjector(t *testing.T) {
 			want: &ErrorInjector{
 				statusCode: http.StatusCreated,
 				statusText: http.StatusText(http.StatusCreated),
+				reporter:   &NoopReporter{},
 			},
 			wantErr: nil,
 		},
@@ -408,6 +431,7 @@ func TestNewErrorInjector(t *testing.T) {
 			want: &ErrorInjector{
 				statusCode: http.StatusCreated,
 				statusText: http.StatusText(http.StatusAccepted),
+				reporter:   &NoopReporter{},
 			},
 			wantErr: nil,
 		},
@@ -420,6 +444,20 @@ func TestNewErrorInjector(t *testing.T) {
 			want: &ErrorInjector{
 				statusCode: http.StatusTeapot,
 				statusText: "wow very random",
+				reporter:   &NoopReporter{},
+			},
+			wantErr: nil,
+		},
+		{
+			name:     "custom reporter",
+			giveCode: http.StatusOK,
+			giveOptions: []ErrorInjectorOption{
+				WithReporter(newTestReporter()),
+			},
+			want: &ErrorInjector{
+				statusCode: http.StatusOK,
+				statusText: http.StatusText(http.StatusOK),
+				reporter:   &testReporter{},
 			},
 			wantErr: nil,
 		},
@@ -525,6 +563,7 @@ func TestNewSlowInjector(t *testing.T) {
 			want: &SlowInjector{
 				duration: 0,
 				sleep:    time.Sleep,
+				reporter: &NoopReporter{},
 			},
 			wantErr: nil,
 		},
@@ -535,6 +574,7 @@ func TestNewSlowInjector(t *testing.T) {
 			want: &SlowInjector{
 				duration: 0,
 				sleep:    time.Sleep,
+				reporter: &NoopReporter{},
 			},
 			wantErr: nil,
 		},
@@ -545,6 +585,7 @@ func TestNewSlowInjector(t *testing.T) {
 			want: &SlowInjector{
 				duration: time.Minute,
 				sleep:    time.Sleep,
+				reporter: &NoopReporter{},
 			},
 			wantErr: nil,
 		},
@@ -557,6 +598,20 @@ func TestNewSlowInjector(t *testing.T) {
 			want: &SlowInjector{
 				duration: time.Minute,
 				sleep:    func(time.Duration) {},
+				reporter: &NoopReporter{},
+			},
+			wantErr: nil,
+		},
+		{
+			name:         "custom reporter",
+			giveDuration: time.Minute,
+			giveOptions: []SlowInjectorOption{
+				WithReporter(newTestReporter()),
+			},
+			want: &SlowInjector{
+				duration: time.Minute,
+				sleep:    time.Sleep,
+				reporter: &testReporter{},
 			},
 			wantErr: nil,
 		},

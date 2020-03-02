@@ -136,6 +136,7 @@ var (
 type errorOption interface {
 	Option
 	RandomInjectorOption
+	RejectInjectorOption
 	ErrorInjectorOption
 	SlowInjectorOption
 }
@@ -150,6 +151,10 @@ func (o errorOptionBool) applyRandomInjector(f *RandomInjector) error {
 	return errErrorOption
 }
 
+func (o errorOptionBool) applyRejectInjector(f *RejectInjector) error {
+	return errErrorOption
+}
+
 func (o errorOptionBool) applyErrorInjector(f *ErrorInjector) error {
 	return errErrorOption
 }
@@ -161,3 +166,14 @@ func (o errorOptionBool) applySlowInjector(f *SlowInjector) error {
 func withError() errorOption {
 	return errorOptionBool(true)
 }
+
+// testReporter is a reporter that does nothing.
+type testReporter struct{}
+
+// NewTestReporter returns a new testReporter.
+func newTestReporter() *testReporter {
+	return &testReporter{}
+}
+
+// Report does nothing.
+func (r *testReporter) Report(name string, state InjectorState) {}

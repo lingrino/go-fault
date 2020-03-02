@@ -119,9 +119,32 @@ type RejectInjector struct {
 	reporter Reporter
 }
 
+// RejectInjectorOption configures a RejectInjector.
+type RejectInjectorOption interface {
+	applyRejectInjector(i *RejectInjector) error
+}
+
+func (o reporterOption) applyRejectInjector(i *RejectInjector) error {
+	i.reporter = o.reporter
+	return nil
+}
+
 // NewRejectInjector returns a RejectInjector struct.
-func NewRejectInjector() (*RejectInjector, error) {
-	return &RejectInjector{}, nil
+func NewRejectInjector(opts ...RejectInjectorOption) (*RejectInjector, error) {
+	// set the defaults.
+	ri := &RejectInjector{
+		reporter: NewNoopReporter(),
+	}
+
+	// apply the options.
+	for _, opt := range opts {
+		err := opt.applyRejectInjector(ri)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return ri, nil
 }
 
 // Handler immediately rejects the request, returning an empty response.
@@ -163,6 +186,11 @@ func WithStatusText(t string) ErrorInjectorOption {
 	return statusTextOption(t)
 }
 
+func (o reporterOption) applyErrorInjector(i *ErrorInjector) error {
+	i.reporter = o.reporter
+	return nil
+}
+
 // NewErrorInjector returns an ErrorInjector that reponds with the configured status code.
 func NewErrorInjector(code int, opts ...ErrorInjectorOption) (*ErrorInjector, error) {
 	const placeholderStatusText = "go-fault replace with default code text"
@@ -171,6 +199,7 @@ func NewErrorInjector(code int, opts ...ErrorInjectorOption) (*ErrorInjector, er
 	ei := &ErrorInjector{
 		statusCode: code,
 		statusText: placeholderStatusText,
+		reporter:   NewNoopReporter(),
 	}
 
 	// apply the options.
@@ -202,11 +231,11 @@ func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 // SlowInjector sleeps a specified duration and then continues the request. Simulates latency.
 type SlowInjector struct {
 	duration time.Duration
-	reporter Reporter
 	sleep    func(t time.Duration)
+	reporter Reporter
 }
 
-// SlowInjectorOption configures an SlowInjector.
+// SlowInjectorOption configures a SlowInjector.
 type SlowInjectorOption interface {
 	applySlowInjector(i *SlowInjector) error
 }
@@ -223,12 +252,18 @@ func WithSleepFunction(f func(t time.Duration)) SlowInjectorOption {
 	return sleepFunctionOption(f)
 }
 
+func (o reporterOption) applySlowInjector(i *SlowInjector) error {
+	i.reporter = o.reporter
+	return nil
+}
+
 // NewSlowInjector returns a SlowInjector that adds the configured latency.
 func NewSlowInjector(d time.Duration, opts ...SlowInjectorOption) (*SlowInjector, error) {
 	// set the defaults.
 	si := &SlowInjector{
 		duration: d,
 		sleep:    time.Sleep,
+		reporter: NewNoopReporter(),
 	}
 
 	// apply the options.

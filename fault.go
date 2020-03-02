@@ -4,7 +4,6 @@ import (
 	"errors"
 	"math/rand"
 	"net/http"
-	"reflect"
 )
 
 const (
@@ -107,6 +106,7 @@ func WithPathWhitelist(whitelist []string) Option {
 	return pathWhitelistOption(whitelist)
 }
 
+// RandSeedOption configures strtucts that can set a random seed
 type RandSeedOption interface {
 	Option
 	RandomInjectorOption
@@ -185,7 +185,6 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 		if shouldEvaluate {
 			f.injector.Handler(next).ServeHTTP(w, updateRequestContextValue(r, ContextValueInjected))
 		} else {
-			f.opt.Reporter.Report(reflect.ValueOf(*f).Type().Name(), StateSkipped)
 			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSkipped))
 		}
 	})
