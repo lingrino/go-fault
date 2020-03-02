@@ -584,7 +584,6 @@ func TestNewSlowInjector(t *testing.T) {
 			} else {
 				assert.Nil(t, si)
 			}
-
 		})
 	}
 }
