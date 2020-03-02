@@ -26,7 +26,7 @@ func TestNewFault(t *testing.T) {
 			giveInjector: newTestInjectorNoop(),
 			giveOptions: []Option{
 				WithEnabled(true),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 				WithPathBlacklist([]string{"/donotinject"}),
 				WithPathWhitelist([]string{"/onlyinject"}),
 				WithRandSeed(100),
@@ -34,7 +34,7 @@ func TestNewFault(t *testing.T) {
 			wantFault: &Fault{
 				enabled:       true,
 				injector:      &testInjectorNoop{},
-				injectPercent: 1.0,
+				participation: 1.0,
 				pathBlacklist: map[string]bool{
 					"/donotinject": true,
 				},
@@ -57,7 +57,7 @@ func TestNewFault(t *testing.T) {
 			name:         "invalid percent",
 			giveInjector: newTestInjectorNoop(),
 			giveOptions: []Option{
-				WithInjectPercent(100.0),
+				WithParticipation(100.0),
 			},
 			wantFault: nil,
 			wantErr:   ErrInvalidPercent,
@@ -69,7 +69,7 @@ func TestNewFault(t *testing.T) {
 			wantFault: &Fault{
 				enabled:       false,
 				injector:      &testInjectorNoop{},
-				injectPercent: 0.0,
+				participation: 0.0,
 				pathBlacklist: nil,
 				pathWhitelist: nil,
 				randSeed:      defaultRandSeed,
@@ -108,7 +108,7 @@ func TestFaultHandler(t *testing.T) {
 			giveInjector: newTestInjectorNoop(),
 			giveOptions: []Option{
 				WithEnabled(false),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
@@ -118,7 +118,7 @@ func TestFaultHandler(t *testing.T) {
 			giveInjector: newTestInjectorNoop(),
 			giveOptions: []Option{
 				WithEnabled(true),
-				WithInjectPercent(0.0),
+				WithParticipation(0.0),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
@@ -128,7 +128,7 @@ func TestFaultHandler(t *testing.T) {
 			giveInjector: newTestInjector500s(),
 			giveOptions: []Option{
 				WithEnabled(true),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 			},
 			wantCode: http.StatusInternalServerError,
 			wantBody: http.StatusText(http.StatusInternalServerError),
@@ -138,7 +138,7 @@ func TestFaultHandler(t *testing.T) {
 			giveInjector: newTestInjector500s(),
 			giveOptions: []Option{
 				WithEnabled(true),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 				WithPathBlacklist([]string{"/"}),
 			},
 			wantCode: testHandlerCode,
@@ -149,7 +149,7 @@ func TestFaultHandler(t *testing.T) {
 			giveInjector: newTestInjector500s(),
 			giveOptions: []Option{
 				WithEnabled(true),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 				WithPathWhitelist([]string{"/"}),
 			},
 			wantCode: http.StatusInternalServerError,
@@ -160,7 +160,7 @@ func TestFaultHandler(t *testing.T) {
 			giveInjector: newTestInjector500s(),
 			giveOptions: []Option{
 				WithEnabled(true),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 				WithPathWhitelist([]string{"/onlyinject"}),
 			},
 			wantCode: testHandlerCode,
@@ -171,7 +171,7 @@ func TestFaultHandler(t *testing.T) {
 			giveInjector: newTestInjector500s(),
 			giveOptions: []Option{
 				WithEnabled(true),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 				WithPathBlacklist([]string{"/"}),
 				WithPathWhitelist([]string{"/"}),
 			},
@@ -183,7 +183,7 @@ func TestFaultHandler(t *testing.T) {
 			giveInjector: newTestInjectorNoop(),
 			giveOptions: []Option{
 				WithEnabled(true),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
@@ -229,7 +229,7 @@ func TestFaultPercentDo(t *testing.T) {
 			t.Parallel()
 
 			f, err := NewFault(newTestInjectorNoop(),
-				WithInjectPercent(tt.givePercent),
+				WithParticipation(tt.givePercent),
 			)
 			assert.NoError(t, err)
 

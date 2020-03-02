@@ -17,7 +17,7 @@ func ExampleNewFault() {
 
 	_, err = fault.NewFault(ei,
 		fault.WithEnabled(true),
-		fault.WithInjectPercent(0.25),
+		fault.WithParticipation(0.25),
 	)
 
 	fmt.Println(err)
@@ -32,7 +32,7 @@ func ExampleNewFault_blacklist() {
 
 	_, err = fault.NewFault(ei,
 		fault.WithEnabled(true),
-		fault.WithInjectPercent(0.25),
+		fault.WithParticipation(0.25),
 		fault.WithPathBlacklist([]string{"/ping", "/health"}),
 	)
 
@@ -48,7 +48,7 @@ func ExampleNewFault_whitelist() {
 
 	_, err = fault.NewFault(ei,
 		fault.WithEnabled(true),
-		fault.WithInjectPercent(0.25),
+		fault.WithParticipation(0.25),
 		fault.WithPathWhitelist([]string{"/injecthere", "/andhere"}),
 	)
 

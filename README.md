@@ -28,7 +28,7 @@ func main() {
         slowInjector, _ := fault.NewSlowInjector(time.Second * 2)
         slowFault, _ := fault.NewFault(slowInjector,
                 fault.WithEnabled(true),
-                fault.WithInjectPercent(0.25),
+                fault.WithParticipation(0.25),
                 fault.WithPathBlacklist([]string{"/ping", "/health"}),
         )
 

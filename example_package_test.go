@@ -32,7 +32,7 @@ func Example() {
 	// Run our fault injection 100% of the time
 	f, err := fault.NewFault(ci,
 		fault.WithEnabled(true),
-		fault.WithInjectPercent(1.0),
+		fault.WithParticipation(1.0),
 		fault.WithPathBlacklist([]string{"/ping", "/health"}),
 	)
 	if err != nil {

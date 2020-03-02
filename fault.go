@@ -26,8 +26,8 @@ type Fault struct {
 	// injector Injector that will be injected.
 	injector Injector
 
-	// injectPercent is the percent of requests that run the injector. 0.0 <= p <= 1.0.
-	injectPercent float32
+	// participation is the percent of requests that run the injector. 0.0 <= p <= 1.0.
+	participation float32
 
 	// pathBlacklist is a map of paths that the injector will not run against.
 	pathBlacklist map[string]bool
@@ -58,15 +58,15 @@ func WithEnabled(e bool) Option {
 	return enabledOption(e)
 }
 
-type injectPercentOption float32
+type participationOption float32
 
-func (o injectPercentOption) applyFault(f *Fault) {
-	f.injectPercent = float32(o)
+func (o participationOption) applyFault(f *Fault) {
+	f.participation = float32(o)
 }
 
-// WithInjectPercent sets the percent of requests that run the injector. 0.0 <= p <= 1.0.
-func WithInjectPercent(p float32) Option {
-	return injectPercentOption(p)
+// WithParticipation sets the percent of requests that run the injector. 0.0 <= p <= 1.0.
+func WithParticipation(p float32) Option {
+	return participationOption(p)
 }
 
 type pathBlacklistOption []string
@@ -132,7 +132,7 @@ func NewFault(i Injector, opts ...Option) (*Fault, error) {
 	if fault.injector == nil {
 		return nil, ErrNilInjector
 	}
-	if fault.injectPercent < 0 || fault.injectPercent > 1.0 {
+	if fault.participation < 0 || fault.participation > 1.0 {
 		return nil, ErrInvalidPercent
 	}
 
@@ -177,11 +177,11 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 	})
 }
 
-// percentDo randomly decides (returns true) if the injector should run based on f.injectPercent.
+// percentDo randomly decides (returns true) if the injector should run based on f.participation.
 // Numbers outside of [0.0,1.0] will always return false.
 func (f *Fault) percentDo() bool {
 	rn := f.rand.Float32()
-	if rn < f.injectPercent && f.injectPercent <= 1.0 {
+	if rn < f.participation && f.participation <= 1.0 {
 		return true
 	}
 

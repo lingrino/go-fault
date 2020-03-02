@@ -52,7 +52,7 @@ func BenchmarkFaultDisabled(b *testing.B) {
 	i, _ := fault.NewErrorInjector(http.StatusInternalServerError)
 	f, _ := fault.NewFault(i,
 		fault.WithEnabled(false),
-		fault.WithInjectPercent(0.0),
+		fault.WithParticipation(0.0),
 	)
 
 	runBenchmark(b, f)
@@ -64,7 +64,7 @@ func BenchmarkFaultErrorZeroPercent(b *testing.B) {
 
 	f, _ := fault.NewFault(i,
 		fault.WithEnabled(true),
-		fault.WithInjectPercent(0.0),
+		fault.WithParticipation(0.0),
 	)
 
 	runBenchmark(b, f)
@@ -76,7 +76,7 @@ func BenchmarkFaultError100Percent(b *testing.B) {
 
 	f, _ := fault.NewFault(i,
 		fault.WithEnabled(true),
-		fault.WithInjectPercent(1.0),
+		fault.WithParticipation(1.0),
 	)
 
 	runBenchmark(b, f)

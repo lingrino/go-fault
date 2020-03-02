@@ -139,7 +139,7 @@ func TestChainInjectorHandler(t *testing.T) {
 
 			f, err := NewFault(ci,
 				WithEnabled(true),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 			)
 			assert.NoError(t, err)
 
@@ -289,7 +289,7 @@ func TestRandomInjectorHandler(t *testing.T) {
 
 			f, err := NewFault(ri,
 				WithEnabled(true),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 			)
 			assert.NoError(t, err)
 
@@ -352,7 +352,7 @@ func TestRejectInjectorHandler(t *testing.T) {
 
 			f, err := NewFault(ri,
 				WithEnabled(true),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 			)
 			assert.NoError(t, err)
 
@@ -470,7 +470,7 @@ func TestErrorInjectorHandler(t *testing.T) {
 
 			f, err := NewFault(ei,
 				WithEnabled(true),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 			)
 			assert.NoError(t, err)
 
@@ -603,7 +603,7 @@ func TestSlowInjectorHandler(t *testing.T) {
 
 			f, err := NewFault(si,
 				WithEnabled(true),
-				WithInjectPercent(1.0),
+				WithParticipation(1.0),
 			)
 			assert.NoError(t, err)
 
