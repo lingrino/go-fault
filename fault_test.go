@@ -206,7 +206,7 @@ func TestFaultHandler(t *testing.T) {
 	}
 }
 
-// TestFaultPercentDo tests the internal Fault.percentDo().
+// TestFaultPercentDo tests the internal Fault.participate().
 func TestFaultPercentDo(t *testing.T) {
 	t.Parallel()
 
@@ -235,7 +235,7 @@ func TestFaultPercentDo(t *testing.T) {
 
 			var trueC, totalC float32
 			for totalC <= 100000 {
-				result := f.percentDo()
+				result := f.participate()
 				if result {
 					trueC++
 				}

@@ -168,8 +168,13 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 			r = updateRequestContextValue(r, ContextValueDisabled)
 		}
 
-		// run the injector if shouldEvaluate and we're randomly chosen.
-		if shouldEvaluate && f.percentDo() {
+		// if all conditions pass, check if we're randomly selected to participate
+		if shouldEvaluate {
+			shouldEvaluate = f.participate()
+		}
+
+		// run the injector if shouldEvaluate
+		if shouldEvaluate {
 			f.injector.Handler(next).ServeHTTP(w, updateRequestContextValue(r, ContextValueInjected))
 		} else {
 			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSkipped))
@@ -177,9 +182,9 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 	})
 }
 
-// percentDo randomly decides (returns true) if the injector should run based on f.participation.
+// participate randomly decides (returns true) if the injector should run based on f.participation.
 // Numbers outside of [0.0,1.0] will always return false.
-func (f *Fault) percentDo() bool {
+func (f *Fault) participate() bool {
 	rn := f.rand.Float32()
 	if rn < f.participation && f.participation <= 1.0 {
 		return true
