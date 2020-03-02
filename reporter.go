@@ -16,19 +16,19 @@ func NewNoopReporter() *NoopReporter {
 // Report does nothing.
 func (r *NoopReporter) Report(name string, state InjectorState) {}
 
-// ReporterOption configures structs that accept a reporter
+// ReporterOption configures structs that accept a reporter.
 type ReporterOption interface {
 	RejectInjectorOption
 	ErrorInjectorOption
 	SlowInjectorOption
 }
 
-// reporterOption holds our passed in Reporter
+// reporterOption holds our passed in Reporter.
 type reporterOption struct {
 	reporter Reporter
 }
 
-// WithReporter sets the Reporter
+// WithReporter sets the Reporter.
 func WithReporter(r Reporter) ReporterOption {
 	return reporterOption{r}
 }
