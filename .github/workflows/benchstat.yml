@@ -1,0 +1,69 @@
+name: Benchstat
+
+on: pull_request
+
+jobs:
+  incoming:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.x
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Benchmark
+        run: |
+          for i in {1..5}; do
+            go test -run=XXX -bench=. | tee -a bench-incoming.txt
+          done
+      - name: Upload Benchmark
+        uses: actions/upload-artifact@v1
+        with:
+          name: bench-incoming.txt
+          path: bench-incoming.txt
+  current:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.x
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: master
+      - name: Benchmark
+        run: |
+          for i in {1..5}; do
+            go test -run=XXX -bench=. | tee -a bench-current.txt
+          done
+      - name: Upload Benchmark
+        uses: actions/upload-artifact@v1
+        with:
+          name: bench-current.txt
+          path: bench-current.txt
+  benchstat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.x
+      - name: Install benchstat
+        run: go get -u golang.org/x/perf/cmd/benchstat
+      - name: Download Incoming
+        uses: actions/download-artifact@v1
+        with:
+          name: bench-incoming.txt
+      - name: Download Current
+        uses: actions/download-artifact@v1
+        with:
+          name: bench-current.txt
+      - name: Benchstat Results
+        run: benchstat bench-current.txt bench-incoming.txt | tee -a benchstat.txt
+      - name: Upload benchstat results
+        uses: actions/upload-artifact@v1
+        with:
+          name: benchstat.txt
+          path: benchstat.txt

@@ -24,8 +24,8 @@ jobs:
         env:
           # https://github.com/golangci/golangci-lint/releases
           GOLANGCILINT_VERSION: 1.23.8
-      - name: Checkout code
-        uses: actions/checkout@v1
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Format
         run: test -z $(gofmt -l -w -s ./)
       - name: Lint
@@ -33,4 +33,12 @@ jobs:
       - name: Test
         run: go test -v -cover -race
       - name: Benchmark
-        run: go test -run=XXX -bench=.
+        run: |
+          for i in {1..5}; do
+            go test -run=XXX -bench=. | tee -a bench.txt
+          done
+      - name: Upload Benchmark
+        uses: actions/upload-artifact@v1
+        with:
+          name: bench.txt
+          path: bench.txt
