@@ -168,9 +168,8 @@ func NewRejectInjector(opts ...RejectInjectorOption) (*RejectInjector, error) {
 // Handler immediately rejects the request, returning an empty response.
 func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if i != nil {
-			i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateStarted)
-		}
+
+		i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateStarted)
 
 		// This is a specialized and documented way of sending an interrupted response to
 		// the client without printing the panic stack trace or erroring.
