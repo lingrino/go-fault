@@ -60,11 +60,11 @@ jobs:
       - name: Download Incoming
         uses: actions/download-artifact@v1
         with:
-          name: bench-incoming.txt
+          name: bench-incoming
       - name: Download Current
         uses: actions/download-artifact@v1
         with:
-          name: bench-current.txt
+          name: bench-current
       - name: Benchstat Results
         run: benchstat bench-current/bench.txt bench-incoming/bench.txt | tee -a benchstat.txt
       - name: Upload benchstat results
