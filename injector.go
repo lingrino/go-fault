@@ -26,7 +26,7 @@ type ChainInjector struct {
 
 // NewChainInjector combines many injectors into a single chain injector. In a chain injector the
 // Handler() for each injector will execute in the order provided.
-func NewChainInjector(is ...Injector) (*ChainInjector, error) {
+func NewChainInjector(is []Injector) (*ChainInjector, error) {
 	chainInjector := &ChainInjector{}
 	for _, i := range is {
 		chainInjector.middlewares = append(chainInjector.middlewares, i.Handler)
@@ -55,29 +55,41 @@ func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 type RandomInjector struct {
 	middlewares []func(next http.Handler) http.Handler
 
-	rand  *rand.Rand
-	randF func(int) int
+	randSeed int64
+	rand     *rand.Rand
+}
+
+// RandomInjectorOption configures a RandomInjector.
+type RandomInjectorOption interface {
+	applyRandomInjector(i *RandomInjector) error
+}
+
+func (o randSeedOption) applyRandomInjector(i *RandomInjector) error {
+	i.randSeed = int64(o)
+	return nil
 }
 
 // NewRandomInjector combines many injectors into a single random injector. When the random injector
 // is called it randomly runs one of the provided injectors.
-func NewRandomInjector(is ...Injector) (*RandomInjector, error) {
-	RandomInjector := &RandomInjector{}
-
-	RandomInjector.rand = rand.New(rand.NewSource(defaultRandSeed))
-	RandomInjector.randF = RandomInjector.rand.Intn
-
-	for _, i := range is {
-		RandomInjector.middlewares = append(RandomInjector.middlewares, i.Handler)
+func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInjector, error) {
+	randomInjector := &RandomInjector{
+		randSeed: defaultRandSeed,
 	}
 
-	return RandomInjector, nil
-}
+	for _, opt := range opts {
+		err := opt.applyRandomInjector(randomInjector)
+		if err != nil {
+			return nil, err
+		}
+	}
 
-// SetRandSeed sets the random seed for RandomInjector to a non-default value
-func (i *RandomInjector) SetRandSeed(s int64) {
-	i.rand = rand.New(rand.NewSource(s))
-	i.randF = i.rand.Intn
+	for _, i := range is {
+		randomInjector.middlewares = append(randomInjector.middlewares, i.Handler)
+	}
+
+	randomInjector.rand = rand.New(rand.NewSource(randomInjector.randSeed))
+
+	return randomInjector, nil
 }
 
 // Handler executes a random injector from RandomInjector.middlewares
@@ -85,7 +97,7 @@ func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil && len(i.middlewares) > 0 {
 			r = updateRequestContextValue(r, ContextValueRandomInjector)
-			i.middlewares[i.randF(len(i.middlewares))](next).ServeHTTP(w, r)
+			i.middlewares[i.rand.Intn(len(i.middlewares))](next).ServeHTTP(w, r)
 		} else {
 			next.ServeHTTP(w, r)
 		}
@@ -117,30 +129,56 @@ type ErrorInjector struct {
 	statusText string
 }
 
-// NewErrorInjector returns an ErrorInjector that reponds with the configured status code.
-func NewErrorInjector(code int) (*ErrorInjector, error) {
-	statusText := http.StatusText(code)
-	if statusText == "" {
-		return nil, ErrInvalidHTTPCode
-	}
-
-	return &ErrorInjector{
-		statusCode: code,
-		statusText: statusText,
-	}, nil
+// ErrorInjectorOption configures an ErrorInjector.
+type ErrorInjectorOption interface {
+	applyErrorInjector(i *ErrorInjector) error
 }
 
-// Handler immediately responds with the configured HTTP status code and default status text for
-// that code.
+type statusTextOption string
+
+func (o statusTextOption) applyErrorInjector(i *ErrorInjector) error {
+	i.statusText = string(o)
+	return nil
+}
+
+// WithStatusText sets the status text that should return.
+func WithStatusText(t string) ErrorInjectorOption {
+	return statusTextOption(t)
+}
+
+// NewErrorInjector returns an ErrorInjector that reponds with the configured status code.
+func NewErrorInjector(code int, opts ...ErrorInjectorOption) (*ErrorInjector, error) {
+	const placeholderStatusText = "go-fault replace with default code text"
+
+	// set the defaults. by default we return ErrInvalidHTTPCode since 0 is invalid.
+	ei := &ErrorInjector{
+		statusCode: code,
+		statusText: placeholderStatusText,
+	}
+
+	// apply the options.
+	for _, opt := range opts {
+		err := opt.applyErrorInjector(ei)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// sanitize the options.
+	if http.StatusText(ei.statusCode) == "" {
+		return nil, ErrInvalidHTTPCode
+	}
+	if ei.statusText == placeholderStatusText {
+		ei.statusText = http.StatusText(ei.statusCode)
+	}
+
+	return ei, nil
+}
+
+// Handler immediately responds with the configured HTTP status code text.
 func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if i != nil {
-			if http.StatusText(i.statusCode) != "" {
-				http.Error(w, i.statusText, i.statusCode)
-				return
-			}
-		}
-		next.ServeHTTP(w, r)
+		http.Error(w, i.statusText, i.statusCode)
 	})
 }
 
@@ -150,22 +188,46 @@ type SlowInjector struct {
 	sleep    func(t time.Duration)
 }
 
+// SlowInjectorOption configures an SlowInjector.
+type SlowInjectorOption interface {
+	applySlowInjector(i *SlowInjector) error
+}
+
+type sleepFunctionOption func(t time.Duration)
+
+func (o sleepFunctionOption) applySlowInjector(i *SlowInjector) error {
+	i.sleep = o
+	return nil
+}
+
+// WithSleepFunction sets the function that will be used to wait the time.Duration
+func WithSleepFunction(f func(t time.Duration)) SlowInjectorOption {
+	return sleepFunctionOption(f)
+}
+
 // NewSlowInjector returns a SlowInjector that adds the configured latency.
-func NewSlowInjector(d time.Duration) (*SlowInjector, error) {
-	return &SlowInjector{
+func NewSlowInjector(d time.Duration, opts ...SlowInjectorOption) (*SlowInjector, error) {
+	// set the defaults.
+	si := &SlowInjector{
 		duration: d,
 		sleep:    time.Sleep,
-	}, nil
+	}
+
+	// apply the options.
+	for _, opt := range opts {
+		err := opt.applySlowInjector(si)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return si, nil
 }
 
 // Handler waits the configured duration and then continues the request.
 func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if i != nil {
-			if i.sleep != nil {
-				i.sleep(i.duration)
-			}
-		}
+		i.sleep(i.duration)
 		next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSlowInjector))
 	})
 }
