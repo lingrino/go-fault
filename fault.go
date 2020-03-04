@@ -106,6 +106,7 @@ func WithPathWhitelist(whitelist []string) Option {
 	return pathWhitelistOption(whitelist)
 }
 
+// RandSeedOption configures strtucts that can set a random seed
 type RandSeedOption interface {
 	Option
 	RandomInjectorOption
