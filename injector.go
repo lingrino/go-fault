@@ -123,7 +123,7 @@ func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInje
 // Handler executes a random injector from RandomInjector.middlewares
 func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if i != nil && len(i.middlewares) > 0 {
+		if len(i.middlewares) > 0 {
 			r = updateRequestContextValue(r, ContextValueRandomInjector)
 			i.middlewares[i.randF(len(i.middlewares))](next).ServeHTTP(w, r)
 		} else {
