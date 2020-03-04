@@ -172,8 +172,6 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 					shouldEvaluate = true
 				}
 			}
-		} else {
-			r = updateRequestContextValue(r, ContextValueDisabled)
 		}
 
 		// if all conditions pass, check if we're randomly selected to participate
@@ -183,9 +181,9 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 
 		// run the injector if shouldEvaluate
 		if shouldEvaluate {
-			f.injector.Handler(next).ServeHTTP(w, updateRequestContextValue(r, ContextValueInjected))
+			f.injector.Handler(next).ServeHTTP(w, r)
 		} else {
-			next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSkipped))
+			next.ServeHTTP(w, r)
 		}
 	})
 }

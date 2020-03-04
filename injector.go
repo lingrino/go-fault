@@ -49,8 +49,6 @@ func NewChainInjector(is []Injector) (*ChainInjector, error) {
 func (i *ChainInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil {
-			r = updateRequestContextValue(r, ContextValueChainInjector)
-
 			// Loop in reverse to preserve handler order
 			for idx := len(i.middlewares) - 1; idx >= 0; idx-- {
 				next = i.middlewares[idx](next)
@@ -106,7 +104,6 @@ func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInje
 func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if i != nil && len(i.middlewares) > 0 {
-			r = updateRequestContextValue(r, ContextValueRandomInjector)
 			i.middlewares[i.rand.Intn(len(i.middlewares))](next).ServeHTTP(w, r)
 		} else {
 			next.ServeHTTP(w, r)
@@ -281,6 +278,6 @@ func NewSlowInjector(d time.Duration, opts ...SlowInjectorOption) (*SlowInjector
 func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		i.sleep(i.duration)
-		next.ServeHTTP(w, updateRequestContextValue(r, ContextValueSlowInjector))
+		next.ServeHTTP(w, r)
 	})
 }
