@@ -562,7 +562,7 @@ func TestNewSlowInjector(t *testing.T) {
 			giveOptions:  nil,
 			want: &SlowInjector{
 				duration: 0,
-				sleep:    time.Sleep,
+				slowF:    time.Sleep,
 				reporter: &NoopReporter{},
 			},
 			wantErr: nil,
@@ -573,7 +573,7 @@ func TestNewSlowInjector(t *testing.T) {
 			giveOptions:  []SlowInjectorOption{},
 			want: &SlowInjector{
 				duration: 0,
-				sleep:    time.Sleep,
+				slowF:    time.Sleep,
 				reporter: &NoopReporter{},
 			},
 			wantErr: nil,
@@ -584,7 +584,7 @@ func TestNewSlowInjector(t *testing.T) {
 			giveOptions:  nil,
 			want: &SlowInjector{
 				duration: time.Minute,
-				sleep:    time.Sleep,
+				slowF:    time.Sleep,
 				reporter: &NoopReporter{},
 			},
 			wantErr: nil,
@@ -593,11 +593,11 @@ func TestNewSlowInjector(t *testing.T) {
 			name:         "custom sleep",
 			giveDuration: time.Minute,
 			giveOptions: []SlowInjectorOption{
-				WithSleepFunction(func(time.Duration) {}),
+				WithSlowFunction(func(time.Duration) {}),
 			},
 			want: &SlowInjector{
 				duration: time.Minute,
-				sleep:    func(time.Duration) {},
+				slowF:    func(time.Duration) {},
 				reporter: &NoopReporter{},
 			},
 			wantErr: nil,
@@ -610,7 +610,7 @@ func TestNewSlowInjector(t *testing.T) {
 			},
 			want: &SlowInjector{
 				duration: time.Minute,
-				sleep:    time.Sleep,
+				slowF:    time.Sleep,
 				reporter: &testReporter{},
 			},
 			wantErr: nil,
@@ -679,7 +679,7 @@ func TestSlowInjectorHandler(t *testing.T) {
 			name:         "with custom function",
 			giveDuration: time.Hour,
 			giveOptions: []SlowInjectorOption{
-				WithSleepFunction(func(time.Duration) {}),
+				WithSlowFunction(func(time.Duration) {}),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,
