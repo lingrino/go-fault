@@ -168,7 +168,6 @@ func NewRejectInjector(opts ...RejectInjectorOption) (*RejectInjector, error) {
 // Handler immediately rejects the request, returning an empty response.
 func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateStarted)
 
 		// This is a specialized and documented way of sending an interrupted response to
