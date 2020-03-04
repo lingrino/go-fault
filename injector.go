@@ -85,9 +85,9 @@ func (o randIntFuncOption) applyRandomInjector(i *RandomInjector) error {
 	return nil
 }
 
-// WithRandIntF sets the function that will be used to randomly get an int. Default rand.Intn.
-// Make sure your function always returns an integer between [0,n) to avoid errors.
-func WithRandIntF(f func(int) int) RandomInjectorOption {
+// WithRandIntFunc sets the function that will be used to randomly get an int. Default rand.Intn.
+// Make sure your function always returns an integer between [0,n) to avoid panics.
+func WithRandIntFunc(f func(int) int) RandomInjectorOption {
 	return randIntFuncOption(f)
 }
 
@@ -260,8 +260,8 @@ func (o slowFunctionOption) applySlowInjector(i *SlowInjector) error {
 	return nil
 }
 
-// WithSlowFunction sets the function that will be used to wait the time.Duration
-func WithSlowFunction(f func(t time.Duration)) SlowInjectorOption {
+// WithSlowFunc sets the function that will be used to wait the time.Duration
+func WithSlowFunc(f func(t time.Duration)) SlowInjectorOption {
 	return slowFunctionOption(f)
 }
 

@@ -127,6 +127,19 @@ func WithRandSeed(s int64) RandSeedOption {
 	return randSeedOption(s)
 }
 
+type randFloat32FuncOption func() float32
+
+func (o randFloat32FuncOption) applyFault(f *Fault) error {
+	f.randF = o
+	return nil
+}
+
+// WithRandFloat32Func sets the function that will be used to randomly get our float value. Default
+// rand.Float32. Make sure your function always returns a float32 between [0.0,1.0) to avoid errors.
+func WithRandFloat32Func(f func() float32) Option {
+	return randFloat32FuncOption(f)
+}
+
 // NewFault validates and sets the provided options and returns a Fault.
 func NewFault(i Injector, opts ...Option) (*Fault, error) {
 	if i == nil {

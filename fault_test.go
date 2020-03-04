@@ -30,6 +30,7 @@ func TestNewFault(t *testing.T) {
 				WithPathBlacklist([]string{"/donotinject"}),
 				WithPathWhitelist([]string{"/onlyinject"}),
 				WithRandSeed(100),
+				WithRandFloat32Func(func() float32 { return 0.0 }),
 			},
 			wantFault: &Fault{
 				enabled:       true,
@@ -43,7 +44,7 @@ func TestNewFault(t *testing.T) {
 				},
 				randSeed: 100,
 				rand:     rand.New(rand.NewSource(100)),
-				randF:    rand.New(rand.NewSource(100)).Float32,
+				randF:    func() float32 { return 0.0 },
 			},
 			wantErr: nil,
 		},
@@ -97,6 +98,12 @@ func TestNewFault(t *testing.T) {
 
 			f, err := NewFault(tt.giveInjector, tt.giveOptions...)
 
+			// Function equality cannot be determined so we set these to nil before doing our comparison
+			if tt.wantFault != nil {
+				f.randF = nil
+				tt.wantFault.randF = nil
+			}
+
 			assert.Equal(t, tt.wantErr, err)
 			assert.Equal(t, tt.wantFault, f)
 		})
@@ -143,6 +150,17 @@ func TestFaultHandler(t *testing.T) {
 			},
 			wantCode: http.StatusInternalServerError,
 			wantBody: http.StatusText(http.StatusInternalServerError),
+		},
+		{
+			name:         "0 percent 500s custom function",
+			giveInjector: newTestInjector500s(),
+			giveOptions: []Option{
+				WithEnabled(true),
+				WithParticipation(1.0),
+				WithRandFloat32Func(func() float32 { return 1.0 }),
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
 		},
 		{
 			name:         "100 percent 500s with blacklist root",
