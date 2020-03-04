@@ -97,7 +97,8 @@ Custom Injector Functions
 Some Injectors support customizing the functions they use to run their injections. You can take
 advantage of these options to add your own logic to an existing Injector instead of creating your
 own. For example, modify the SlowInjector function to slow in a rancom distribution instead of for a
-fixed duration.
+fixed duration. Be careful when you use these options that your return values fall within the same
+range of values expected by the default functions to avoid panics or other undesirable begavior.
 
 Customize the function a Fault uses to determine participation (default: rand.Float32) by passing
 WithRandFloat32Func() to NewFault().
