@@ -55,6 +55,21 @@ The fault package is safe to leave implemented even when you are not running a f
 
 Benchmarks are provided to compare without faults, with faults disabled, and with faults enabled. Benchmarks are uploaded as artifacts in the GitHub Actions Validate Workflow and you can download them from any [Validate Workflow](https://github.com/github/go-fault/actions?query=workflow%3AValidate).
 
+You can also run benchmarks locally using the following command (example output):
+
+```shell
+$ go test -run=XXX -bench=.
+goos: darwin
+goarch: amd64
+pkg: github.com/github/go-fault
+BenchmarkNoFault-8                        684826              1734 ns/op
+BenchmarkFaultDisabled-8                  675291              1771 ns/op
+BenchmarkFaultErrorZeroPercent-8          667903              1823 ns/op
+BenchmarkFaultError100Percent-8           663661              1833 ns/op
+PASS
+ok      github.com/github/go-fault      8.814s
+```
+
 ## Status
 
 The package is mostly implemented, however breaking API changes may still happen before the `v1.0.0` release. The fault package is intentionally simple and new features are unlikely to be implemented. Here are a few things that may still be added before `v1.0.0`.
