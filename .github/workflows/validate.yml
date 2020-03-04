@@ -6,7 +6,7 @@ jobs:
   validate:
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-18.04]
         go-version: [1.13.x, 1.14.x]
     runs-on: ${{ matrix.os }}
     steps:
@@ -40,5 +40,5 @@ jobs:
       - name: Upload Benchmark
         uses: actions/upload-artifact@v1
         with:
-          name: bench.txt
+          name: bench-${{ matrix.os }}-${{ matrix.go-version }}.txt
           path: bench.txt
