@@ -1,6 +1,6 @@
 name: Benchstat
 
-on: push # TODO - pull_request
+on: push
 
 jobs:
   incoming:
