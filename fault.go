@@ -40,6 +40,9 @@ type Fault struct {
 
 	// rand is our random number source.
 	rand *rand.Rand
+
+	// randF is a function that returns a float32 [0.0,1.0)
+	randF func() float32
 }
 
 // Option configures a Fault.
@@ -134,6 +137,7 @@ func NewFault(i Injector, opts ...Option) (*Fault, error) {
 	fault := &Fault{
 		injector: i,
 		randSeed: defaultRandSeed,
+		randF:    nil,
 	}
 
 	// apply the list of options to fault.
@@ -144,8 +148,11 @@ func NewFault(i Injector, opts ...Option) (*Fault, error) {
 		}
 	}
 
-	// set our random source with the provided seed.
+	// set our random source and function with the provided seed.
 	fault.rand = rand.New(rand.NewSource(fault.randSeed))
+	if fault.randF == nil {
+		fault.randF = fault.rand.Float32
+	}
 
 	return fault, nil
 }
@@ -193,7 +200,7 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 // participate randomly decides (returns true) if the injector should run based on f.participation.
 // Numbers outside of [0.0,1.0] will always return false.
 func (f *Fault) participate() bool {
-	rn := f.rand.Float32()
+	rn := f.randF()
 	if rn < f.participation && f.participation <= 1.0 {
 		return true
 	}
