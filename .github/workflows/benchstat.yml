@@ -15,13 +15,13 @@ jobs:
       - name: Benchmark
         run: |
           for i in {1..5}; do
-            go test -run=XXX -bench=. | tee -a bench-incoming.txt
+            go test -run=XXX -bench=. | tee -a bench.txt
           done
       - name: Upload Benchmark
         uses: actions/upload-artifact@v1
         with:
-          name: bench-incoming.txt
-          path: bench-incoming.txt
+          name: bench-incoming
+          path: bench.txt
   current:
     runs-on: ubuntu-latest
     steps:
@@ -36,13 +36,13 @@ jobs:
       - name: Benchmark
         run: |
           for i in {1..5}; do
-            go test -run=XXX -bench=. | tee -a bench-current.txt
+            go test -run=XXX -bench=. | tee -a bench.txt
           done
       - name: Upload Benchmark
         uses: actions/upload-artifact@v1
         with:
-          name: bench-current.txt
-          path: bench-current.txt
+          name: bench-current
+          path: bench.txt
   benchstat:
     needs: [incoming, current]
     runs-on: ubuntu-latest
@@ -66,9 +66,9 @@ jobs:
         with:
           name: bench-current.txt
       - name: Benchstat Results
-        run: benchstat bench-current.txt bench-incoming.txt | tee -a benchstat.txt
+        run: benchstat bench-current/bench.txt bench-incoming/bench.txt | tee -a benchstat.txt
       - name: Upload benchstat results
         uses: actions/upload-artifact@v1
         with:
-          name: benchstat.txt
+          name: benchstat
           path: benchstat.txt

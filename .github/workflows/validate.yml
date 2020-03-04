@@ -40,5 +40,5 @@ jobs:
       - name: Upload Benchmark
         uses: actions/upload-artifact@v1
         with:
-          name: bench-${{ matrix.os }}-${{ matrix.go-version }}.txt
+          name: bench-${{ matrix.os }}-${{ matrix.go-version }}
           path: bench.txt
