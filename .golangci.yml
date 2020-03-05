@@ -64,3 +64,4 @@ issues:
     - path: example_*_test.go
       linters:
         - errcheck # not required to check errors in examples
+        - ineffassign # not required to check errors in examples
