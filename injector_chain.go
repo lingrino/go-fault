@@ -8,9 +8,14 @@ type ChainInjector struct {
 	middlewares []func(next http.Handler) http.Handler
 }
 
+// ChainInjectorOption configures a ChainInjector.
+type ChainInjectorOption interface {
+	applyChainInjector(i *ChainInjector) error
+}
+
 // NewChainInjector combines many injectors into a single chain injector. In a chain injector the
 // Handler() for each injector will execute in the order provided.
-func NewChainInjector(is []Injector) (*ChainInjector, error) {
+func NewChainInjector(is []Injector, opts ...ChainInjectorOption) (*ChainInjector, error) {
 	chainInjector := &ChainInjector{}
 	for _, i := range is {
 		chainInjector.middlewares = append(chainInjector.middlewares, i.Handler)
