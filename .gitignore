@@ -13,3 +13,8 @@
 
 # Dependency directories
 vendor/
+
+# Benchmark artifacts
+bench.txt
+new.txt
+old.txt
