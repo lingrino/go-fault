@@ -1,7 +1,6 @@
 package fault
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -92,7 +91,7 @@ func TestNewErrorInjector(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-		t.Run(fmt.Sprintf("%v", tt.name), func(t *testing.T) {
+		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
 			ei, err := NewErrorInjector(tt.giveCode, tt.giveOptions...)

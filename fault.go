@@ -150,28 +150,28 @@ func NewFault(i Injector, opts ...Option) (*Fault, error) {
 		return nil, ErrNilInjector
 	}
 
-	// set the defaults.
-	fault := &Fault{
+	// set defaults
+	f := &Fault{
 		injector: i,
 		randSeed: defaultRandSeed,
 		randF:    nil,
 	}
 
-	// apply the list of options to fault.
+	// apply options
 	for _, opt := range opts {
-		err := opt.applyFault(fault)
+		err := opt.applyFault(f)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// set our random source and function with the provided seed.
-	fault.rand = rand.New(rand.NewSource(fault.randSeed))
-	if fault.randF == nil {
-		fault.randF = fault.rand.Float32
+	// set seeded rand source and function
+	f.rand = rand.New(rand.NewSource(f.randSeed))
+	if f.randF == nil {
+		f.randF = f.rand.Float32
 	}
 
-	return fault, nil
+	return f, nil
 }
 
 // Handler determines if the Injector should execute and runs it if so.

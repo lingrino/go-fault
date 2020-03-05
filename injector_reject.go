@@ -22,12 +22,12 @@ func (o reporterOption) applyRejectInjector(i *RejectInjector) error {
 
 // NewRejectInjector returns a RejectInjector struct.
 func NewRejectInjector(opts ...RejectInjectorOption) (*RejectInjector, error) {
-	// set the defaults.
+	// set defaults
 	ri := &RejectInjector{
 		reporter: NewNoopReporter(),
 	}
 
-	// apply the options.
+	// apply options
 	for _, opt := range opts {
 		err := opt.applyRejectInjector(ri)
 		if err != nil {

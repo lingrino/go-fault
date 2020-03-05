@@ -45,28 +45,32 @@ func WithRandIntFunc(f func(int) int) RandomInjectorOption {
 // NewRandomInjector combines many injectors into a single random injector. When the random injector
 // is called it randomly runs one of the provided injectors.
 func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInjector, error) {
-	randomInjector := &RandomInjector{
+	// set defaults
+	ri := &RandomInjector{
 		randSeed: defaultRandSeed,
 		randF:    nil,
 	}
 
+	// apply options
 	for _, opt := range opts {
-		err := opt.applyRandomInjector(randomInjector)
+		err := opt.applyRandomInjector(ri)
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	// set middleware
 	for _, i := range is {
-		randomInjector.middlewares = append(randomInjector.middlewares, i.Handler)
+		ri.middlewares = append(ri.middlewares, i.Handler)
 	}
 
-	randomInjector.rand = rand.New(rand.NewSource(randomInjector.randSeed))
-	if randomInjector.randF == nil {
-		randomInjector.randF = randomInjector.rand.Intn
+	// set seeded rand source and function
+	ri.rand = rand.New(rand.NewSource(ri.randSeed))
+	if ri.randF == nil {
+		ri.randF = ri.rand.Intn
 	}
 
-	return randomInjector, nil
+	return ri, nil
 }
 
 // Handler executes a random injector from RandomInjector.middlewares.

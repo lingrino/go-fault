@@ -37,14 +37,14 @@ func (o reporterOption) applySlowInjector(i *SlowInjector) error {
 
 // NewSlowInjector returns a SlowInjector that adds the configured latency.
 func NewSlowInjector(d time.Duration, opts ...SlowInjectorOption) (*SlowInjector, error) {
-	// set the defaults.
+	// set defaults
 	si := &SlowInjector{
 		duration: d,
 		slowF:    time.Sleep,
 		reporter: NewNoopReporter(),
 	}
 
-	// apply the options.
+	// apply options
 	for _, opt := range opts {
 		err := opt.applySlowInjector(si)
 		if err != nil {

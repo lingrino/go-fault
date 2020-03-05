@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestNewFault tests NewFault().
+// TestNewFault tests NewFault.
 func TestNewFault(t *testing.T) {
 	t.Parallel()
 

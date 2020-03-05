@@ -43,16 +43,16 @@ func (o reporterOption) applyErrorInjector(i *ErrorInjector) error {
 
 // NewErrorInjector returns an ErrorInjector that reponds with the configured status code.
 func NewErrorInjector(code int, opts ...ErrorInjectorOption) (*ErrorInjector, error) {
-	const placeholderStatusText = "go-fault replace with default code text"
+	const placeholderStatusText = "go-fault: replace with default code text"
 
-	// set the defaults. by default we return ErrInvalidHTTPCode since 0 is invalid.
+	// set defaults
 	ei := &ErrorInjector{
 		statusCode: code,
 		statusText: placeholderStatusText,
 		reporter:   NewNoopReporter(),
 	}
 
-	// apply the options.
+	// apply options
 	for _, opt := range opts {
 		err := opt.applyErrorInjector(ei)
 		if err != nil {
@@ -60,7 +60,7 @@ func NewErrorInjector(code int, opts ...ErrorInjectorOption) (*ErrorInjector, er
 		}
 	}
 
-	// sanitize the options.
+	// check options
 	if http.StatusText(ei.statusCode) == "" {
 		return nil, ErrInvalidHTTPCode
 	}
