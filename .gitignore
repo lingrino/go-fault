@@ -18,3 +18,7 @@ vendor/
 bench.txt
 new.txt
 old.txt
+
+# Test Artifacts
+coverage.txt
+test-results.txt
