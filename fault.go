@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math/rand"
 	"net/http"
+	"sync"
 )
 
 const (
@@ -43,6 +44,9 @@ type Fault struct {
 
 	// randF is a function that returns a float32 [0.0,1.0)
 	randF func() float32
+
+	// *rand.Rand is not thread safe. This mutex protects our random source
+	randMtx sync.Mutex
 }
 
 // Option configures a Fault.
@@ -211,7 +215,10 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 // participate randomly decides (returns true) if the injector should run based on f.participation.
 // Numbers outside of [0.0,1.0] will always return false.
 func (f *Fault) participate() bool {
+	f.randMtx.Lock()
 	rn := f.randF()
+	f.randMtx.Unlock()
+
 	if rn < f.participation && f.participation <= 1.0 {
 		return true
 	}

@@ -3,6 +3,7 @@ package fault
 import (
 	"math/rand"
 	"net/http"
+	"sync"
 )
 
 // RandomInjector combines many injectors into a single injector. When the random injector is called
@@ -13,6 +14,9 @@ type RandomInjector struct {
 	randSeed int64
 	rand     *rand.Rand
 	randF    func(int) int
+
+	// *rand.Rand is not thread safe. This mutex protects our random source
+	randMtx sync.Mutex
 }
 
 // RandomInjectorOption configures a RandomInjector.
@@ -69,7 +73,11 @@ func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInje
 func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if len(i.middlewares) > 0 {
-			i.middlewares[i.randF(len(i.middlewares))](next).ServeHTTP(w, r)
+			i.randMtx.Lock()
+			randIdx := i.randF(len(i.middlewares))
+			i.randMtx.Unlock()
+
+			i.middlewares[randIdx](next).ServeHTTP(w, r)
 		} else {
 			next.ServeHTTP(w, r)
 		}
