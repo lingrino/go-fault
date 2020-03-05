@@ -42,6 +42,12 @@ jobs:
         with:
           name: coverage
           path: coverage.txt
+      - name: Enforce 100% Test Coverage
+        run: |
+          if ! grep -q "coverage: 100.0% of statements" test-results.txt; then
+            echo "::error::Test Coverage is not 100%"
+            exit 1
+          fi
       - name: Benchmark
         run: |
           for i in {1..5}; do
