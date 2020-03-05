@@ -3,6 +3,7 @@ package fault
 import (
 	"errors"
 	"net/http"
+	"reflect"
 )
 
 var (
@@ -73,6 +74,8 @@ func NewErrorInjector(code int, opts ...ErrorInjectorOption) (*ErrorInjector, er
 // Handler immediately responds with the configured HTTP status code text.
 func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		go i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateStarted)
 		http.Error(w, i.statusText, i.statusCode)
+		go i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateFinished)
 	})
 }

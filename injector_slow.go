@@ -2,6 +2,7 @@ package fault
 
 import (
 	"net/http"
+	"reflect"
 	"time"
 )
 
@@ -57,7 +58,10 @@ func NewSlowInjector(d time.Duration, opts ...SlowInjectorOption) (*SlowInjector
 // Handler waits the configured duration and then continues the request.
 func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		go i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateStarted)
 		i.slowF(i.duration)
+		go i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateFinished)
+
 		next.ServeHTTP(w, r)
 	})
 }
