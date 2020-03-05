@@ -53,7 +53,9 @@ ok      github.com/github/go-fault      2.858s
 
 The fault package is safe to leave implemented even when you are not running a fault injection. While the fault is disabled there should be negligible performance degradation compared to removing the package from the request path. While enabled there may be very minor performance differences, but this will only be the case *while you are already doing fault injection.*
 
-Benchmarks are provided to compare without faults, with faults disabled, and with faults enabled. Run them with:
+Benchmarks are provided to compare without faults, with faults disabled, and with faults enabled. Benchmarks are uploaded as artifacts in the GitHub Actions Validate Workflow and you can download them from any [Validate Workflow](https://github.com/github/go-fault/actions?query=workflow%3AValidate).
+
+You can also run benchmarks locally using the following command (example output):
 
 ```shell
 $ go test -run=XXX -bench=.

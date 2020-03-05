@@ -6,7 +6,7 @@ jobs:
   validate:
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os: [ubuntu-18.04]
         go-version: [1.13.x, 1.14.x]
     runs-on: ${{ matrix.os }}
     steps:
@@ -22,9 +22,9 @@ jobs:
           cp /tmp/golangci-lint/golangci-lint-${GOLANGCILINT_VERSION}-linux-amd64/golangci-lint ${HOME}/golangci-lint
           rm -rf /tmp/golangci-lint.tar.gz /tmp/golangci-lint
         env:
-          GOLANGCILINT_VERSION: 1.23.7
-      - name: Checkout code
-        uses: actions/checkout@v1
+          GOLANGCILINT_VERSION: 1.23.8 # https://github.com/golangci/golangci-lint/releases
+      - name: Checkout
+        uses: actions/checkout@v2
       - name: Format
         run: test -z $(gofmt -l -w -s ./)
       - name: Lint
@@ -32,4 +32,12 @@ jobs:
       - name: Test
         run: go test -v -cover -race
       - name: Benchmark
-        run: go test -run=XXX -bench=.
+        run: |
+          for i in {1..5}; do
+            go test -run=XXX -bench=. | tee -a bench.txt
+          done
+      - name: Upload Benchmark
+        uses: actions/upload-artifact@v1
+        with:
+          name: bench-${{ matrix.os }}-${{ matrix.go-version }}
+          path: bench.txt

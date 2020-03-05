@@ -1,0 +1,74 @@
+name: Benchstat
+
+on: push
+
+jobs:
+  incoming:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.x
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Benchmark
+        run: |
+          for i in {1..5}; do
+            go test -run=XXX -bench=. | tee -a bench.txt
+          done
+      - name: Upload Benchmark
+        uses: actions/upload-artifact@v1
+        with:
+          name: bench-incoming
+          path: bench.txt
+  current:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.x
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: master
+      - name: Benchmark
+        run: |
+          for i in {1..5}; do
+            go test -run=XXX -bench=. | tee -a bench.txt
+          done
+      - name: Upload Benchmark
+        uses: actions/upload-artifact@v1
+        with:
+          name: bench-current
+          path: bench.txt
+  benchstat:
+    needs: [incoming, current]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Go
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.14.x
+      - name: Setup Go ENV
+        run: |
+          echo "::set-env name=GOPATH::${{ github.workspace }}/go"
+          echo "::add-path::${{ github.workspace }}/go/bin"
+      - name: Install benchstat
+        run: go get -u golang.org/x/perf/cmd/benchstat
+      - name: Download Incoming
+        uses: actions/download-artifact@v1
+        with:
+          name: bench-incoming
+      - name: Download Current
+        uses: actions/download-artifact@v1
+        with:
+          name: bench-current
+      - name: Benchstat Results
+        run: benchstat bench-current/bench.txt bench-incoming/bench.txt | tee -a benchstat.txt
+      - name: Upload benchstat results
+        uses: actions/upload-artifact@v1
+        with:
+          name: benchstat
+          path: benchstat.txt
