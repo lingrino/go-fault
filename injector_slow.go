@@ -25,7 +25,7 @@ func (o slowFunctionOption) applySlowInjector(i *SlowInjector) error {
 	return nil
 }
 
-// WithSlowFunc sets the function that will be used to wait the time.Duration
+// WithSlowFunc sets the function that will be used to wait the time.Duration.
 func WithSlowFunc(f func(t time.Duration)) SlowInjectorOption {
 	return slowFunctionOption(f)
 }

@@ -63,10 +63,10 @@ func newTestInjectorNoop() *testInjectorNoop {
 	return &testInjectorNoop{}
 }
 
-// Handler does nothing
+// Handler does nothing.
 func (i *testInjectorNoop) Handler(next http.Handler) http.Handler { return next }
 
-// testInjectorStop is an injector that returns
+// testInjectorStop is an injector that returns.
 type testInjectorStop struct{}
 
 // newTestInjectorStop creates a new testInjectorStop struct.
@@ -74,7 +74,7 @@ func newTestInjectorStop() *testInjectorStop {
 	return &testInjectorStop{}
 }
 
-// Handler returns an empty handler
+// Handler returns an empty handler.
 func (i *testInjectorStop) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 }
@@ -87,7 +87,7 @@ func newTestInjector500s() *testInjector500s {
 	return &testInjector500s{}
 }
 
-// Handler returns a 500
+// Handler returns a 500.
 func (i *testInjector500s) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(500), 500)
@@ -102,7 +102,7 @@ func newTestInjectorOneOK() *testInjectorOneOK {
 	return &testInjectorOneOK{}
 }
 
-// Handler writes statusOK and "one"
+// Handler writes statusOK and "one".
 func (i *testInjectorOneOK) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -119,7 +119,7 @@ func newTestInjectorTwoTeapot() *testInjectorTwoTeapot {
 	return &testInjectorTwoTeapot{}
 }
 
-// Handler writes StatusTeapot and "two"
+// Handler writes StatusTeapot and "two".
 func (i *testInjectorTwoTeapot) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
@@ -132,7 +132,7 @@ var (
 	errErrorOption = errors.New("intentional error for tests")
 )
 
-// errorOption simply returns an error when passed as an option
+// errorOption simply returns an error when passed as an option.
 type errorOption interface {
 	Option
 	RandomInjectorOption

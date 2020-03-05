@@ -69,7 +69,7 @@ func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInje
 	return randomInjector, nil
 }
 
-// Handler executes a random injector from RandomInjector.middlewares
+// Handler executes a random injector from RandomInjector.middlewares.
 func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if len(i.middlewares) > 0 {

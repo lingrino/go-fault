@@ -113,7 +113,7 @@ func WithPathWhitelist(whitelist []string) Option {
 	return pathWhitelistOption(whitelist)
 }
 
-// RandSeedOption configures strtucts that can set a random seed
+// RandSeedOption configures strtucts that can set a random seed.
 type RandSeedOption interface {
 	Option
 	RandomInjectorOption
@@ -126,7 +126,7 @@ func (o randSeedOption) applyFault(f *Fault) error {
 	return nil
 }
 
-// WithRandSeed sets the seed for fault.rand
+// WithRandSeed sets the seed for fault.rand.
 func WithRandSeed(s int64) RandSeedOption {
 	return randSeedOption(s)
 }

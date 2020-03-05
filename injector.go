@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// InjectorState represents the states an injector can be in
+// InjectorState represents the states an injector can be in.
 type InjectorState int
 
 const (
