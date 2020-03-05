@@ -208,6 +208,18 @@ func TestNewRandomInjector(t *testing.T) {
 			wantErr:  nil,
 		},
 		{
+			name: "with custom function",
+			giveInjector: []Injector{
+				newTestInjectorNoop(),
+				newTestInjector500s(),
+			},
+			giveOptions: []RandomInjectorOption{
+				WithRandIntFunc(func(int) int { return 1 }),
+			},
+			wantRand: rand.New(rand.NewSource(defaultRandSeed)),
+			wantErr:  nil,
+		},
+		{
 			name: "option error",
 			giveInjector: []Injector{
 				newTestInjectorNoop(),
@@ -228,6 +240,7 @@ func TestNewRandomInjector(t *testing.T) {
 			ri, err := NewRandomInjector(tt.giveInjector, tt.giveOptions...)
 
 			assert.Equal(t, tt.wantErr, err)
+
 			if tt.wantErr == nil {
 				assert.Equal(t, tt.wantRand, ri.rand)
 				assert.Equal(t, len(tt.giveInjector), len(ri.middlewares))
@@ -243,30 +256,34 @@ func TestRandomInjectorHandler(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		give     []Injector
-		wantCode int
-		wantBody string
+		name        string
+		give        []Injector
+		giveOptions []RandomInjectorOption
+		wantCode    int
+		wantBody    string
 	}{
 		{
-			name:     "nil",
-			give:     nil,
-			wantCode: testHandlerCode,
-			wantBody: testHandlerBody,
+			name:        "nil",
+			give:        nil,
+			giveOptions: nil,
+			wantCode:    testHandlerCode,
+			wantBody:    testHandlerBody,
 		},
 		{
-			name:     "empty",
-			give:     []Injector{},
-			wantCode: testHandlerCode,
-			wantBody: testHandlerBody,
+			name:        "empty",
+			give:        []Injector{},
+			giveOptions: nil,
+			wantCode:    testHandlerCode,
+			wantBody:    testHandlerBody,
 		},
 		{
 			name: "one",
 			give: []Injector{
 				newTestInjectorOneOK(),
 			},
-			wantCode: http.StatusOK,
-			wantBody: "one" + testHandlerBody,
+			giveOptions: nil,
+			wantCode:    http.StatusOK,
+			wantBody:    "one" + testHandlerBody,
 		},
 		{
 			name: "two",
@@ -274,6 +291,7 @@ func TestRandomInjectorHandler(t *testing.T) {
 				newTestInjectorOneOK(),
 				newTestInjectorTwoTeapot(),
 			},
+			giveOptions: nil,
 			// With defaultRandSeed we will always choose the second item
 			wantCode: http.StatusTeapot,
 			wantBody: "two" + testHandlerBody,
@@ -289,7 +307,27 @@ func TestRandomInjectorHandler(t *testing.T) {
 				newTestInjectorNoop(),
 				newTestInjectorTwoTeapot(),
 			},
+			giveOptions: nil,
 			// With defaultRandSeed we will always choose the seventh item
+			wantCode: http.StatusTeapot,
+			wantBody: "two" + testHandlerBody,
+		},
+		{
+			name: "custom rand func",
+			give: []Injector{
+				newTestInjectorNoop(),
+				newTestInjectorNoop(),
+				newTestInjectorTwoTeapot(),
+				newTestInjectorNoop(),
+				newTestInjectorNoop(),
+				newTestInjectorNoop(),
+				newTestInjectorNoop(),
+			},
+			giveOptions: []RandomInjectorOption{
+				WithRandIntFunc(func(int) int { return 2 }),
+			},
+			// With defaultRandSeed we will always choose the seventh item. We expect
+			// our custom function to choose the third item instead.
 			wantCode: http.StatusTeapot,
 			wantBody: "two" + testHandlerBody,
 		},
@@ -300,7 +338,7 @@ func TestRandomInjectorHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ri, err := NewRandomInjector(tt.give)
+			ri, err := NewRandomInjector(tt.give, tt.giveOptions...)
 			assert.NoError(t, err)
 
 			f, err := NewFault(ri,
@@ -562,7 +600,7 @@ func TestNewSlowInjector(t *testing.T) {
 			giveOptions:  nil,
 			want: &SlowInjector{
 				duration: 0,
-				sleep:    time.Sleep,
+				slowF:    time.Sleep,
 				reporter: &NoopReporter{},
 			},
 			wantErr: nil,
@@ -573,7 +611,7 @@ func TestNewSlowInjector(t *testing.T) {
 			giveOptions:  []SlowInjectorOption{},
 			want: &SlowInjector{
 				duration: 0,
-				sleep:    time.Sleep,
+				slowF:    time.Sleep,
 				reporter: &NoopReporter{},
 			},
 			wantErr: nil,
@@ -584,7 +622,7 @@ func TestNewSlowInjector(t *testing.T) {
 			giveOptions:  nil,
 			want: &SlowInjector{
 				duration: time.Minute,
-				sleep:    time.Sleep,
+				slowF:    time.Sleep,
 				reporter: &NoopReporter{},
 			},
 			wantErr: nil,
@@ -593,11 +631,11 @@ func TestNewSlowInjector(t *testing.T) {
 			name:         "custom sleep",
 			giveDuration: time.Minute,
 			giveOptions: []SlowInjectorOption{
-				WithSleepFunction(func(time.Duration) {}),
+				WithSlowFunc(func(time.Duration) {}),
 			},
 			want: &SlowInjector{
 				duration: time.Minute,
-				sleep:    func(time.Duration) {},
+				slowF:    func(time.Duration) {},
 				reporter: &NoopReporter{},
 			},
 			wantErr: nil,
@@ -610,7 +648,7 @@ func TestNewSlowInjector(t *testing.T) {
 			},
 			want: &SlowInjector{
 				duration: time.Minute,
-				sleep:    time.Sleep,
+				slowF:    time.Sleep,
 				reporter: &testReporter{},
 			},
 			wantErr: nil,
@@ -633,12 +671,15 @@ func TestNewSlowInjector(t *testing.T) {
 
 			si, err := NewSlowInjector(tt.giveDuration, tt.giveOptions...)
 
-			assert.Equal(t, tt.wantErr, err)
-			if tt.wantErr == nil {
-				assert.Equal(t, tt.want.duration, si.duration)
-			} else {
-				assert.Nil(t, si)
+			// Function equality cannot be determined so we set these to nil before
+			// doing our comparison
+			if tt.want != nil {
+				si.slowF = nil
+				tt.want.slowF = nil
 			}
+
+			assert.Equal(t, tt.wantErr, err)
+			assert.Equal(t, tt.want, si)
 		})
 	}
 }
@@ -679,7 +720,7 @@ func TestSlowInjectorHandler(t *testing.T) {
 			name:         "with custom function",
 			giveDuration: time.Hour,
 			giveOptions: []SlowInjectorOption{
-				WithSleepFunction(func(time.Duration) {}),
+				WithSlowFunc(func(time.Duration) {}),
 			},
 			wantCode: testHandlerCode,
 			wantBody: testHandlerBody,

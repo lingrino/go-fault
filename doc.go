@@ -92,6 +92,23 @@ This helps you reproduce any errors you see when running an Injector. If you pre
 customize the seed for each random generator by passing WithRandSeed() to NewFault and
 NewRandomInjector.
 
+Custom Injector Functions
+
+Some Injectors support customizing the functions they use to run their injections. You can take
+advantage of these options to add your own logic to an existing Injector instead of creating your
+own. For example, modify the SlowInjector function to slow in a rancom distribution instead of for a
+fixed duration. Be careful when you use these options that your return values fall within the same
+range of values expected by the default functions to avoid panics or other undesirable begavior.
+
+Customize the function a Fault uses to determine participation (default: rand.Float32) by passing
+WithRandFloat32Func() to NewFault().
+
+Customize the function a RandomInjector uses to choose which injector to run (default: rand.Intn) by
+passing WithRandIntFunc() to NewRandomInjector().
+
+Customize the function a SlowInjector uses to wait (default: time.Sleep) by passing WithSlowFunc()
+to NewSlowInjector().
+
 Configuration
 
 All configuration for the fault package is done through options passed to NewFault and NewInjector.

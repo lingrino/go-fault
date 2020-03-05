@@ -65,6 +65,7 @@ type RandomInjector struct {
 
 	randSeed int64
 	rand     *rand.Rand
+	randF    func(int) int
 }
 
 // RandomInjectorOption configures a RandomInjector.
@@ -77,11 +78,25 @@ func (o randSeedOption) applyRandomInjector(i *RandomInjector) error {
 	return nil
 }
 
+type randIntFuncOption func(int) int
+
+func (o randIntFuncOption) applyRandomInjector(i *RandomInjector) error {
+	i.randF = o
+	return nil
+}
+
+// WithRandIntFunc sets the function that will be used to randomly get an int. Default rand.Intn.
+// Make sure your function always returns an integer between [0,n) to avoid panics.
+func WithRandIntFunc(f func(int) int) RandomInjectorOption {
+	return randIntFuncOption(f)
+}
+
 // NewRandomInjector combines many injectors into a single random injector. When the random injector
 // is called it randomly runs one of the provided injectors.
 func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInjector, error) {
 	randomInjector := &RandomInjector{
 		randSeed: defaultRandSeed,
+		randF:    nil,
 	}
 
 	for _, opt := range opts {
@@ -96,6 +111,9 @@ func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInje
 	}
 
 	randomInjector.rand = rand.New(rand.NewSource(randomInjector.randSeed))
+	if randomInjector.randF == nil {
+		randomInjector.randF = randomInjector.rand.Intn
+	}
 
 	return randomInjector, nil
 }
@@ -103,8 +121,8 @@ func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInje
 // Handler executes a random injector from RandomInjector.middlewares
 func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if i != nil && len(i.middlewares) > 0 {
-			i.middlewares[i.rand.Intn(len(i.middlewares))](next).ServeHTTP(w, r)
+		if len(i.middlewares) > 0 {
+			i.middlewares[i.randF(len(i.middlewares))](next).ServeHTTP(w, r)
 		} else {
 			next.ServeHTTP(w, r)
 		}
@@ -147,9 +165,7 @@ func NewRejectInjector(opts ...RejectInjectorOption) (*RejectInjector, error) {
 // Handler immediately rejects the request, returning an empty response.
 func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if i != nil {
-			i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateStarted)
-		}
+		i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateStarted)
 
 		// This is a specialized and documented way of sending an interrupted response to
 		// the client without printing the panic stack trace or erroring.
@@ -225,10 +241,10 @@ func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 	})
 }
 
-// SlowInjector sleeps a specified duration and then continues the request. Simulates latency.
+// SlowInjector runs slowF (default time.Sleep) and then continues the request. Simulates latency.
 type SlowInjector struct {
 	duration time.Duration
-	sleep    func(t time.Duration)
+	slowF    func(t time.Duration)
 	reporter Reporter
 }
 
@@ -237,16 +253,16 @@ type SlowInjectorOption interface {
 	applySlowInjector(i *SlowInjector) error
 }
 
-type sleepFunctionOption func(t time.Duration)
+type slowFunctionOption func(t time.Duration)
 
-func (o sleepFunctionOption) applySlowInjector(i *SlowInjector) error {
-	i.sleep = o
+func (o slowFunctionOption) applySlowInjector(i *SlowInjector) error {
+	i.slowF = o
 	return nil
 }
 
-// WithSleepFunction sets the function that will be used to wait the time.Duration
-func WithSleepFunction(f func(t time.Duration)) SlowInjectorOption {
-	return sleepFunctionOption(f)
+// WithSlowFunc sets the function that will be used to wait the time.Duration
+func WithSlowFunc(f func(t time.Duration)) SlowInjectorOption {
+	return slowFunctionOption(f)
 }
 
 func (o reporterOption) applySlowInjector(i *SlowInjector) error {
@@ -259,7 +275,7 @@ func NewSlowInjector(d time.Duration, opts ...SlowInjectorOption) (*SlowInjector
 	// set the defaults.
 	si := &SlowInjector{
 		duration: d,
-		sleep:    time.Sleep,
+		slowF:    time.Sleep,
 		reporter: NewNoopReporter(),
 	}
 
@@ -277,7 +293,7 @@ func NewSlowInjector(d time.Duration, opts ...SlowInjectorOption) (*SlowInjector
 // Handler waits the configured duration and then continues the request.
 func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		i.sleep(i.duration)
+		i.slowF(i.duration)
 		next.ServeHTTP(w, r)
 	})
 }
