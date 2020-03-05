@@ -26,7 +26,7 @@ func TestNewSlowInjector(t *testing.T) {
 			want: &SlowInjector{
 				duration: 0,
 				slowF:    time.Sleep,
-				reporter: &NoopReporter{},
+				reporter: NewNoopReporter(),
 			},
 			wantErr: nil,
 		},
@@ -37,7 +37,7 @@ func TestNewSlowInjector(t *testing.T) {
 			want: &SlowInjector{
 				duration: 0,
 				slowF:    time.Sleep,
-				reporter: &NoopReporter{},
+				reporter: NewNoopReporter(),
 			},
 			wantErr: nil,
 		},
@@ -48,7 +48,7 @@ func TestNewSlowInjector(t *testing.T) {
 			want: &SlowInjector{
 				duration: time.Minute,
 				slowF:    time.Sleep,
-				reporter: &NoopReporter{},
+				reporter: NewNoopReporter(),
 			},
 			wantErr: nil,
 		},
@@ -61,7 +61,7 @@ func TestNewSlowInjector(t *testing.T) {
 			want: &SlowInjector{
 				duration: time.Minute,
 				slowF:    func(time.Duration) {},
-				reporter: &NoopReporter{},
+				reporter: NewNoopReporter(),
 			},
 			wantErr: nil,
 		},
@@ -74,7 +74,7 @@ func TestNewSlowInjector(t *testing.T) {
 			want: &SlowInjector{
 				duration: time.Minute,
 				slowF:    time.Sleep,
-				reporter: &testReporter{},
+				reporter: newTestReporter(),
 			},
 			wantErr: nil,
 		},
@@ -96,8 +96,7 @@ func TestNewSlowInjector(t *testing.T) {
 
 			si, err := NewSlowInjector(tt.giveDuration, tt.giveOptions...)
 
-			// Function equality cannot be determined so we set these to nil before
-			// doing our comparison
+			// Function equality cannot be determined so set to nil before comparing
 			if tt.want != nil {
 				si.slowF = nil
 				tt.want.slowF = nil

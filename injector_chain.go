@@ -2,8 +2,7 @@ package fault
 
 import "net/http"
 
-// ChainInjector combines many injectors into a single chain injector. In a chain injector the
-// Handler func will execute ChainInjector.middlewares in order and then returns.
+// ChainInjector combines many Injectors into a single Injector that runs them in order.
 type ChainInjector struct {
 	middlewares []func(next http.Handler) http.Handler
 }
@@ -13,8 +12,7 @@ type ChainInjectorOption interface {
 	applyChainInjector(i *ChainInjector) error
 }
 
-// NewChainInjector combines many injectors into a single chain injector. In a chain injector the
-// Handler() for each injector will execute in the order provided.
+// NewChainInjector combines many Injectors into a single Injector that runs them in order.
 func NewChainInjector(is []Injector, opts ...ChainInjectorOption) (*ChainInjector, error) {
 	// set defaults
 	ci := &ChainInjector{}

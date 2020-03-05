@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// RejectInjector immediately sends back an empty response.
+// RejectInjector sends back an empty response.
 type RejectInjector struct {
 	reporter Reporter
 }
@@ -20,7 +20,7 @@ func (o reporterOption) applyRejectInjector(i *RejectInjector) error {
 	return nil
 }
 
-// NewRejectInjector returns a RejectInjector struct.
+// NewRejectInjector returns a RejectInjector.
 func NewRejectInjector(opts ...RejectInjectorOption) (*RejectInjector, error) {
 	// set defaults
 	ri := &RejectInjector{
@@ -38,7 +38,7 @@ func NewRejectInjector(opts ...RejectInjectorOption) (*RejectInjector, error) {
 	return ri, nil
 }
 
-// Handler immediately rejects the request, returning an empty response.
+// Handler rejects the request, returning an empty response.
 func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		go i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateStarted)

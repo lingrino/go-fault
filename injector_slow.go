@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// SlowInjector runs slowF (default time.Sleep) and then continues the request. Simulates latency.
+// SlowInjector waits and then continues the request.
 type SlowInjector struct {
 	duration time.Duration
 	slowF    func(t time.Duration)
@@ -35,7 +35,7 @@ func (o reporterOption) applySlowInjector(i *SlowInjector) error {
 	return nil
 }
 
-// NewSlowInjector returns a SlowInjector that adds the configured latency.
+// NewSlowInjector returns a SlowInjector.
 func NewSlowInjector(d time.Duration, opts ...SlowInjectorOption) (*SlowInjector, error) {
 	// set defaults
 	si := &SlowInjector{
@@ -55,7 +55,7 @@ func NewSlowInjector(d time.Duration, opts ...SlowInjectorOption) (*SlowInjector
 	return si, nil
 }
 
-// Handler waits the configured duration and then continues the request.
+// Handler runs i.slowF to wait the set duration and then continues.
 func (i *SlowInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		go i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateStarted)

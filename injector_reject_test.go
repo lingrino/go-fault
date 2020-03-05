@@ -20,7 +20,7 @@ func TestNewRejectInjector(t *testing.T) {
 			name:        "no options",
 			giveOptions: []RejectInjectorOption{},
 			want: &RejectInjector{
-				reporter: &NoopReporter{},
+				reporter: NewNoopReporter(),
 			},
 			wantErr: nil,
 		},
@@ -30,7 +30,7 @@ func TestNewRejectInjector(t *testing.T) {
 				WithReporter(newTestReporter()),
 			},
 			want: &RejectInjector{
-				reporter: &testReporter{},
+				reporter: newTestReporter(),
 			},
 			wantErr: nil,
 		},
@@ -62,10 +62,12 @@ func TestRejectInjectorHandler(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name string
+		name        string
+		giveOptions []RejectInjectorOption
 	}{
 		{
-			name: "valid",
+			name:        "valid",
+			giveOptions: []RejectInjectorOption{},
 		},
 	}
 
@@ -74,7 +76,7 @@ func TestRejectInjectorHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ri, err := NewRejectInjector()
+			ri, err := NewRejectInjector(tt.giveOptions...)
 			assert.NoError(t, err)
 
 			f, err := NewFault(ri,

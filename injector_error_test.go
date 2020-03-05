@@ -26,7 +26,7 @@ func TestNewErrorInjector(t *testing.T) {
 			want: &ErrorInjector{
 				statusCode: http.StatusCreated,
 				statusText: http.StatusText(http.StatusCreated),
-				reporter:   &NoopReporter{},
+				reporter:   NewNoopReporter(),
 			},
 			wantErr: nil,
 		},
@@ -39,7 +39,7 @@ func TestNewErrorInjector(t *testing.T) {
 			want: &ErrorInjector{
 				statusCode: http.StatusCreated,
 				statusText: http.StatusText(http.StatusAccepted),
-				reporter:   &NoopReporter{},
+				reporter:   NewNoopReporter(),
 			},
 			wantErr: nil,
 		},
@@ -52,7 +52,7 @@ func TestNewErrorInjector(t *testing.T) {
 			want: &ErrorInjector{
 				statusCode: http.StatusTeapot,
 				statusText: "wow very random",
-				reporter:   &NoopReporter{},
+				reporter:   NewNoopReporter(),
 			},
 			wantErr: nil,
 		},
@@ -65,7 +65,7 @@ func TestNewErrorInjector(t *testing.T) {
 			want: &ErrorInjector{
 				statusCode: http.StatusOK,
 				statusText: http.StatusText(http.StatusOK),
-				reporter:   &testReporter{},
+				reporter:   newTestReporter(),
 			},
 			wantErr: nil,
 		},

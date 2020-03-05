@@ -98,7 +98,7 @@ func TestNewFault(t *testing.T) {
 
 			f, err := NewFault(tt.giveInjector, tt.giveOptions...)
 
-			// Function equality cannot be determined so we set these to nil before doing our comparison
+			// Function equality cannot be determined so set to nil before comparing
 			if tt.wantFault != nil {
 				f.randF = nil
 				tt.wantFault.randF = nil

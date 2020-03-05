@@ -6,8 +6,7 @@ import (
 	"sync"
 )
 
-// RandomInjector combines many injectors into a single injector. When the random injector is called
-// it randomly runs one of the provided injectors.
+// RandomInjector combines many Injectors into a single Injector that runs one randomly.
 type RandomInjector struct {
 	middlewares []func(next http.Handler) http.Handler
 
@@ -37,13 +36,12 @@ func (o randIntFuncOption) applyRandomInjector(i *RandomInjector) error {
 }
 
 // WithRandIntFunc sets the function that will be used to randomly get an int. Default rand.Intn.
-// Make sure your function always returns an integer between [0,n) to avoid panics.
+// Always returns an integer between [0,n) to avoid panics.
 func WithRandIntFunc(f func(int) int) RandomInjectorOption {
 	return randIntFuncOption(f)
 }
 
-// NewRandomInjector combines many injectors into a single random injector. When the random injector
-// is called it randomly runs one of the provided injectors.
+// NewRandomInjector combines many Injectors into a single Injector that runs one randomly.
 func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInjector, error) {
 	// set defaults
 	ri := &RandomInjector{
@@ -73,7 +71,7 @@ func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInje
 	return ri, nil
 }
 
-// Handler executes a random injector from RandomInjector.middlewares.
+// Handler executes a random Injector from RandomInjector.middlewares.
 func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if len(i.middlewares) > 0 {

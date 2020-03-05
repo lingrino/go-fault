@@ -139,7 +139,7 @@ func (o randFloat32FuncOption) applyFault(f *Fault) error {
 }
 
 // WithRandFloat32Func sets the function that will be used to randomly get our float value. Default
-// rand.Float32. Make sure your function always returns a float32 between [0.0,1.0) to avoid errors.
+// rand.Float32. Always returns a float32 between [0.0,1.0) to avoid errors.
 func WithRandFloat32Func(f func() float32) Option {
 	return randFloat32FuncOption(f)
 }

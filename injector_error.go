@@ -7,12 +7,11 @@ import (
 )
 
 var (
-	// ErrInvalidHTTPCode returns when an invalid http status code is provided.
+	// ErrInvalidHTTPCode when an invalid status code is provided.
 	ErrInvalidHTTPCode = errors.New("not a valid http status code")
 )
 
-// ErrorInjector immediately responds with an http status code and the error message associated with
-// that code.
+// ErrorInjector responds with an http status code and message.
 type ErrorInjector struct {
 	statusCode int
 	statusText string
@@ -31,7 +30,7 @@ func (o statusTextOption) applyErrorInjector(i *ErrorInjector) error {
 	return nil
 }
 
-// WithStatusText sets the status text that should return.
+// WithStatusText sets custom status text to write.
 func WithStatusText(t string) ErrorInjectorOption {
 	return statusTextOption(t)
 }
@@ -41,7 +40,7 @@ func (o reporterOption) applyErrorInjector(i *ErrorInjector) error {
 	return nil
 }
 
-// NewErrorInjector returns an ErrorInjector that reponds with the configured status code.
+// NewErrorInjector returns an ErrorInjector that reponds with a status code.
 func NewErrorInjector(code int, opts ...ErrorInjectorOption) (*ErrorInjector, error) {
 	const placeholderStatusText = "go-fault: replace with default code text"
 
@@ -71,7 +70,7 @@ func NewErrorInjector(code int, opts ...ErrorInjectorOption) (*ErrorInjector, er
 	return ei, nil
 }
 
-// Handler immediately responds with the configured HTTP status code text.
+// Handler responds with the configured status code and text.
 func (i *ErrorInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		go i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateStarted)
