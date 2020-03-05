@@ -1,3 +1,4 @@
+# This workflow runs all of our lints, tests, and other requirements for merging code.
 name: Validate
 
 on: push
@@ -30,7 +31,7 @@ jobs:
       - name: Lint
         run: ${HOME}/golangci-lint run
       - name: Test
-        run: go test -v -cover -race
+        run: go test -v -cover -race ./...
       - name: Benchmark
         run: |
           for i in {1..5}; do
