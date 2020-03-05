@@ -177,29 +177,30 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 		// will evaluate, if everything is configured correctly.
 		var shouldEvaluate bool
 
-		// enabled is the first check, to prioritize speed when faults are disabled.
 		if f.enabled {
-			// if path is in blacklist, do not evaluate.
-			if _, ok := f.pathBlacklist[r.URL.Path]; !ok {
-				// if whitelist exists and path is not in it, do not evaluate.
-				if len(f.pathWhitelist) > 0 {
-					// if path is in the whitelist, evaluate.
-					if _, ok := f.pathWhitelist[r.URL.Path]; ok {
-						shouldEvaluate = true
-					}
-				} else {
-					// if whitelist does not exist, evaluate.
-					shouldEvaluate = true
-				}
+			shouldEvaluate = true
+		}
+
+		// false is path is in blacklist
+		if shouldEvaluate {
+			if _, ok := f.pathBlacklist[r.URL.Path]; ok {
+				shouldEvaluate = false
 			}
 		}
 
-		// if all conditions pass, check if we're randomly selected to participate
+		// false if whitelist exists and path is not in it
+		if shouldEvaluate && len(f.pathWhitelist) > 0 {
+			if _, ok := f.pathWhitelist[r.URL.Path]; !ok {
+				shouldEvaluate = false
+			}
+		}
+
+		// false if not selected for participation
 		if shouldEvaluate {
 			shouldEvaluate = f.participate()
 		}
 
-		// run the injector if shouldEvaluate
+		// run the injector or pass
 		if shouldEvaluate {
 			f.injector.Handler(next).ServeHTTP(w, r)
 		} else {
