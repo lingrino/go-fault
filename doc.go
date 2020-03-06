@@ -8,11 +8,10 @@ modifying and/or delaying your service's http responses. Place the Fault middlew
 the chain that it can act quickly, but after any other middlewares that should complete before fault
 injection (auth, redirects, etc...).
 
-The type and severity of injected faults is controlled options passed to NewFault(Injector,
-Options). NewFault must also be passed an Injector, which is an interface that holds the actual
-fault injection code in Injector.Handler. The Fault struct wraps Injector.Handler in another
-Fault.Handler that applies generic Fault logic (such as what % of requests to run the Injector on)
-to the Injector.
+The type and severity of injected faults is controlled by options passed to NewFault(Injector,
+Options). NewFault must be passed an Injector, which is an interface that holds the actual fault
+injection code in Injector.Handler. The Fault wraps Injector.Handler in another Fault.Handler that
+applies generic Fault logic (such as what % of requests to run the Injector on) to the Injector.
 
 Make sure you use the NewFault() and NewTypeInjector() constructors to create valid Faults and
 Injectors.
@@ -35,20 +34,21 @@ response will produce:
 
 ErrorInjector
 
-Use fault.ErrorInjector to immediately return an http status code of your choosing along with the
-standard HTTP response body for that code. For example, you can return a 200, 301, 418, 500, or any
-other valid status code to test how your clients respond to different statuses.
+Use fault.ErrorInjector to immediately return a valid http status code of your choosing along with
+the standard HTTP response body for that code. For example, you can return a 200, 301, 418, 500, or
+any other valid status code to test how your clients respond to different statuses. Pass the
+WithStatusText() option to customize the response text.
 
 SlowInjector
 
-Use fault.SlowInjector to wait a configured time.Duration before proceeding with the request as
-normal. For example, you can use the SlowInjector to add a 10ms delay to your incoming requests.
+Use fault.SlowInjector to wait a configured time.Duration before proceeding with the request. For
+example, you can use the SlowInjector to add a 10ms delay to your requests.
 
 RandomInjector
 
-Use fault.RandomInjector to random choose one of the above faults to inject. Pass a list of Injector
-to fault.NewRandomInjector and when RandomInjector is evaluated it will randomly insert on of the
-injectors that you passed.
+Use fault.RandomInjector to randomly choose one of the above faults to inject. Pass a list of
+Injector to fault.NewRandomInjector and when RandomInjector is evaluated it will randomly run one of
+the injectors that you passed.
 
 Combining Faults
 
@@ -68,7 +68,7 @@ execute together.
 Blacklisting & Whitelisting Paths
 
 The NewFault() constructor has WithPathBlacklist() and WithPathWhitelist() options. Any path you
-include in the PathBlacklist will never have faults run against it. For PathWhitelist, if you
+include in the PathBlacklist will never have faults run against it. With PathWhitelist, if you
 provide a non-empty list then faults will not be run against any paths except those specified in
 PathWhitelist. The PathBlacklist take priority over the PathWhitelist, a path in both lists will
 never have a fault run against it. The paths that you include must match exactly the path in
@@ -80,17 +80,23 @@ subset of your routes.
 
 Custom Injectors
 
-The package provides an Injector interface and you can satisfy that interface to provide your own
-Injector. Use custom injectors to add additional logic (logging, stats) to the package-provided
-injectors or to create your own completely new Injector that can still be managed by the Fault
-struct.
+The fault package provides an Injector interface and you can satisfy that interface to provide your
+own Injector. Use custom injectors to add additional logic to the package-provided injectors or to
+create your own completely new Injector that can still be managed by a Fault.
+
+Reporter
+
+The package provides a Reporter interface that can be added to Faults and Injectors using the
+WithReporter option. A Reporter will receive events when the state of the Injector changes. For
+example, Reporter.Report(InjectorName, StateStarted) is run at the beginning of all Injectors. The
+Reporter is meant to be provided by the consumer of the package and integrate with services like
+stats and logging. The default Reporter throws away all events.
 
 Random Seeds
 
-By default all randomness is seeded with defaultRandSeed, which is 1, the same default as math/rand.
-This helps you reproduce any errors you see when running an Injector. If you prefer, you can also
-customize the seed for each random generator by passing WithRandSeed() to NewFault and
-NewRandomInjector.
+By default all randomness is seeded with defaultRandSeed(1), the same default as math/rand. This
+helps you reproduce any errors you see when running an Injector. If you prefer, you can also
+customize the seed passing WithRandSeed() to NewFault and NewRandomInjector.
 
 Custom Injector Functions
 

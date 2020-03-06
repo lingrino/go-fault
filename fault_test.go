@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestNewFault tests NewFault().
+// TestNewFault tests NewFault.
 func TestNewFault(t *testing.T) {
 	t.Parallel()
 
@@ -34,7 +34,7 @@ func TestNewFault(t *testing.T) {
 			},
 			wantFault: &Fault{
 				enabled:       true,
-				injector:      &testInjectorNoop{},
+				injector:      newTestInjectorNoop(),
 				participation: 1.0,
 				pathBlacklist: map[string]bool{
 					"/donotinject": true,
@@ -79,7 +79,7 @@ func TestNewFault(t *testing.T) {
 			giveOptions:  []Option{},
 			wantFault: &Fault{
 				enabled:       false,
-				injector:      &testInjectorNoop{},
+				injector:      newTestInjectorNoop(),
 				participation: 0.0,
 				pathBlacklist: nil,
 				pathWhitelist: nil,
@@ -98,7 +98,7 @@ func TestNewFault(t *testing.T) {
 
 			f, err := NewFault(tt.giveInjector, tt.giveOptions...)
 
-			// Function equality cannot be determined so we set these to nil before doing our comparison
+			// Function equality cannot be determined so set to nil before comparing
 			if tt.wantFault != nil {
 				f.randF = nil
 				tt.wantFault.randF = nil

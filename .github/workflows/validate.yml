@@ -1,3 +1,4 @@
+# This workflow runs all of our lints, tests, and other requirements for merging code.
 name: Validate
 
 on: push
@@ -30,7 +31,23 @@ jobs:
       - name: Lint
         run: ${HOME}/golangci-lint run
       - name: Test
-        run: go test -v -cover -race
+        run: go test -v -race -cover -coverprofile=coverage.txt ./... | tee -a test-results.txt
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v1
+        with:
+          name: test-results
+          path: test-results.txt
+      - name: Upload Coverage
+        uses: actions/upload-artifact@v1
+        with:
+          name: coverage
+          path: coverage.txt
+      - name: Enforce 100% Test Coverage
+        run: |
+          if ! grep -q "coverage: 100.0% of statements" test-results.txt; then
+            echo "::error::Test Coverage is not 100%"
+            exit 1
+          fi
       - name: Benchmark
         run: |
           for i in {1..5}; do

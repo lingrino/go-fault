@@ -9,17 +9,18 @@ import (
 )
 
 const (
-	// We don't use http.StatusOK because some operations default to that and then we can't tell
-	// the difference between what testHandler wrote and what the operation wrote.
+	// testHandlerCode and testHandlerBody are the default status code and status text expected
+	// from a handler that has not been changed by an Injector. Don't use http.StatusOK because
+	// some http methods default to http.StatusOK and then there's no difference between our
+	// test response and other standard responses.
 	testHandlerCode = http.StatusAccepted
 	testHandlerBody = "Accepted"
 )
 
-// testRequest simulates a request with the provided Fault injected.
+// testRequest simulates a request to testHandler with a Fault injected.
 func testRequest(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 	t.Helper()
 
-	// testHandler is the main handler that runs on our request.
 	var testHandler = http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, testHandlerBody, testHandlerCode)
 	})
@@ -37,8 +38,7 @@ func testRequest(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 	return rr
 }
 
-// testRequestExpectPanic runs testRequest and catches panics, failing the test if the panic is not
-// http.ErrAbortHandler.
+// testRequestExpectPanic runs testRequest and catches/passes if panic(http.ErrAbortHandler)
 func testRequestExpectPanic(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 	t.Helper()
 
@@ -58,23 +58,23 @@ func testRequestExpectPanic(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 // testInjectorNoop is an injector that does nothing.
 type testInjectorNoop struct{}
 
-// newTestInjectorNoop creates a new testInjectorNoop struct.
+// newTestInjectorNoop creates a new testInjectorNoop.
 func newTestInjectorNoop() *testInjectorNoop {
 	return &testInjectorNoop{}
 }
 
-// Handler does nothing
+// Handler does nothing.
 func (i *testInjectorNoop) Handler(next http.Handler) http.Handler { return next }
 
-// testInjectorStop is an injector that returns
+// testInjectorStop is an injector that stops a request.
 type testInjectorStop struct{}
 
-// newTestInjectorStop creates a new testInjectorStop struct.
+// newTestInjectorStop creates a new testInjectorStop.
 func newTestInjectorStop() *testInjectorStop {
 	return &testInjectorStop{}
 }
 
-// Handler returns an empty handler
+// Handler returns a Handler that stops the request.
 func (i *testInjectorStop) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 }
@@ -82,27 +82,27 @@ func (i *testInjectorStop) Handler(next http.Handler) http.Handler {
 // testInjector500s is an injector that returns 500s.
 type testInjector500s struct{}
 
-// newTestInjector500 creates a new testInjector500s struct.
+// newTestInjector500 creates a new testInjector500s.
 func newTestInjector500s() *testInjector500s {
 	return &testInjector500s{}
 }
 
-// Handler returns a 500
+// Handler returns a 500.
 func (i *testInjector500s) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, http.StatusText(500), 500)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	})
 }
 
 // testInjectorOneOK is an injector that writes "one" and statusOK.
 type testInjectorOneOK struct{}
 
-// testInjectorOneOK creates a new testInjectorOneOK struct.
+// newTestInjectorOneOK creates a new testInjectorOneOK.
 func newTestInjectorOneOK() *testInjectorOneOK {
 	return &testInjectorOneOK{}
 }
 
-// Handler writes statusOK and "one"
+// Handler writes statusOK and "one" and continues.
 func (i *testInjectorOneOK) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -114,12 +114,12 @@ func (i *testInjectorOneOK) Handler(next http.Handler) http.Handler {
 // testInjectorTwoTeapot is an injector that writes "two" and statusTeapot.
 type testInjectorTwoTeapot struct{}
 
-// testInjectorTwoTeapot creates a new testInjectorTwoTeapot struct.
+// newTestInjectorTwoTeapot creates a new testInjectorTwoTeapot.
 func newTestInjectorTwoTeapot() *testInjectorTwoTeapot {
 	return &testInjectorTwoTeapot{}
 }
 
-// Handler writes StatusTeapot and "two"
+// Handler writes StatusTeapot and "two" and continues.
 func (i *testInjectorTwoTeapot) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
@@ -132,9 +132,10 @@ var (
 	errErrorOption = errors.New("intentional error for tests")
 )
 
-// errorOption simply returns an error when passed as an option
+// errorOption returns errErrorOption.
 type errorOption interface {
 	Option
+	ChainInjectorOption
 	RandomInjectorOption
 	RejectInjectorOption
 	ErrorInjectorOption
@@ -144,6 +145,10 @@ type errorOption interface {
 type errorOptionBool bool
 
 func (o errorOptionBool) applyFault(f *Fault) error {
+	return errErrorOption
+}
+
+func (o errorOptionBool) applyChainInjector(f *ChainInjector) error {
 	return errErrorOption
 }
 

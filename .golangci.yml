@@ -61,3 +61,7 @@ issues:
         - dupl # many functions in tests look like duplicates
         - funlen # test function can be very long due to test cases
         - gomnd # there are many magic numbers in tests
+    - path: example_*_test.go
+      linters:
+        - errcheck # not required to check errors in examples
+        - ineffassign # not required to check errors in examples

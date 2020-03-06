@@ -31,7 +31,7 @@ func benchmarkRequest(b *testing.B, f *fault.Fault) *httptest.ResponseRecorder {
 	return rr
 }
 
-// runBenchmark runs the benchmark look with the provided Fault.
+// runBenchmark benchmarks the provided Fault.
 func runBenchmark(b *testing.B, f *fault.Fault) {
 	var rr *httptest.ResponseRecorder
 
@@ -42,26 +42,24 @@ func runBenchmark(b *testing.B, f *fault.Fault) {
 	_ = rr
 }
 
-// BenchmarkNoFault is our control with no Fault injected.
+// BenchmarkNoFault is our control using no Fault.
 func BenchmarkNoFault(b *testing.B) {
 	runBenchmark(b, nil)
 }
 
-// BenchmarkFaultDisabled benchmarks a disabled Fault struct.
+// BenchmarkFaultDisabled benchmarks a disabled Fault.
 func BenchmarkFaultDisabled(b *testing.B) {
 	i, _ := fault.NewErrorInjector(http.StatusInternalServerError)
 	f, _ := fault.NewFault(i,
 		fault.WithEnabled(false),
-		fault.WithParticipation(0.0),
 	)
 
 	runBenchmark(b, f)
 }
 
-// BenchmarkFaultErrorZeroPercent benchmarks an enabled fault struct that runs 0% of the time.
+// BenchmarkFaultErrorZeroPercent benchmarks an enabled Fault with 0% participation.
 func BenchmarkFaultErrorZeroPercent(b *testing.B) {
 	i, _ := fault.NewErrorInjector(http.StatusInternalServerError)
-
 	f, _ := fault.NewFault(i,
 		fault.WithEnabled(true),
 		fault.WithParticipation(0.0),
@@ -70,10 +68,9 @@ func BenchmarkFaultErrorZeroPercent(b *testing.B) {
 	runBenchmark(b, f)
 }
 
-// BenchmarkFaultError100Percent benchmarks an enabled fault struct that runs 100% of the time.
+// BenchmarkFaultError100Percent benchmarks an enabled Fault with 100% participation.
 func BenchmarkFaultError100Percent(b *testing.B) {
 	i, _ := fault.NewErrorInjector(http.StatusInternalServerError)
-
 	f, _ := fault.NewFault(i,
 		fault.WithEnabled(true),
 		fault.WithParticipation(1.0),

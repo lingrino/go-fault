@@ -13,34 +13,49 @@ func TestNewChainInjector(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name    string
-		give    []Injector
-		wantErr error
+		name         string
+		giveInjector []Injector
+		giveOptions  []ChainInjectorOption
+		wantErr      error
 	}{
 		{
-			name:    "nil",
-			give:    nil,
-			wantErr: nil,
+			name:         "nil",
+			giveInjector: nil,
+			giveOptions:  []ChainInjectorOption{},
+			wantErr:      nil,
 		},
 		{
-			name:    "empty",
-			give:    []Injector{},
-			wantErr: nil,
+			name:         "empty",
+			giveInjector: []Injector{},
+			giveOptions:  []ChainInjectorOption{},
+			wantErr:      nil,
 		},
 		{
 			name: "one",
-			give: []Injector{
+			giveInjector: []Injector{
 				newTestInjectorNoop(),
 			},
-			wantErr: nil,
+			giveOptions: []ChainInjectorOption{},
+			wantErr:     nil,
 		},
 		{
 			name: "two",
-			give: []Injector{
+			giveInjector: []Injector{
 				newTestInjectorNoop(),
 				newTestInjector500s(),
 			},
-			wantErr: nil,
+			giveOptions: []ChainInjectorOption{},
+			wantErr:     nil,
+		},
+		{
+			name: "option error",
+			giveInjector: []Injector{
+				newTestInjectorNoop(),
+			},
+			giveOptions: []ChainInjectorOption{
+				withError(),
+			},
+			wantErr: errErrorOption,
 		},
 	}
 
@@ -49,10 +64,15 @@ func TestNewChainInjector(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ci, err := NewChainInjector(tt.give)
+			ci, err := NewChainInjector(tt.giveInjector, tt.giveOptions...)
 
 			assert.Equal(t, tt.wantErr, err)
-			assert.Equal(t, len(tt.give), len(ci.middlewares))
+
+			if tt.wantErr == nil {
+				assert.Equal(t, len(tt.giveInjector), len(ci.middlewares))
+			} else {
+				assert.Nil(t, ci)
+			}
 		})
 	}
 }
@@ -62,67 +82,75 @@ func TestChainInjectorHandler(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name     string
-		give     []Injector
-		wantCode int
-		wantBody string
+		name         string
+		giveInjector []Injector
+		giveOptions  []ChainInjectorOption
+		wantCode     int
+		wantBody     string
 	}{
 		{
-			name:     "nil",
-			give:     nil,
-			wantCode: testHandlerCode,
-			wantBody: testHandlerBody,
+			name:         "nil",
+			giveInjector: nil,
+			giveOptions:  []ChainInjectorOption{},
+			wantCode:     testHandlerCode,
+			wantBody:     testHandlerBody,
 		},
 		{
-			name:     "empty",
-			give:     []Injector{},
-			wantCode: testHandlerCode,
-			wantBody: testHandlerBody,
+			name:         "empty",
+			giveInjector: []Injector{},
+			giveOptions:  []ChainInjectorOption{},
+			wantCode:     testHandlerCode,
+			wantBody:     testHandlerBody,
 		},
 		{
 			name: "one",
-			give: []Injector{
+			giveInjector: []Injector{
 				newTestInjectorOneOK(),
 			},
-			wantCode: http.StatusOK,
-			wantBody: "one" + testHandlerBody,
+			giveOptions: []ChainInjectorOption{},
+			wantCode:    http.StatusOK,
+			wantBody:    "one" + testHandlerBody,
 		},
 		{
 			name: "noop one",
-			give: []Injector{
+			giveInjector: []Injector{
 				newTestInjectorNoop(),
 				newTestInjectorOneOK(),
 			},
-			wantCode: http.StatusOK,
-			wantBody: "one" + testHandlerBody,
+			giveOptions: []ChainInjectorOption{},
+			wantCode:    http.StatusOK,
+			wantBody:    "one" + testHandlerBody,
 		},
 		{
 			name: "two error",
-			give: []Injector{
+			giveInjector: []Injector{
 				newTestInjectorTwoTeapot(),
 				newTestInjector500s(),
 			},
-			wantCode: http.StatusTeapot,
-			wantBody: "two" + http.StatusText(http.StatusInternalServerError),
+			giveOptions: []ChainInjectorOption{},
+			wantCode:    http.StatusTeapot,
+			wantBody:    "two" + http.StatusText(http.StatusInternalServerError),
 		},
 		{
 			name: "one two",
-			give: []Injector{
+			giveInjector: []Injector{
 				newTestInjectorOneOK(),
 				newTestInjectorTwoTeapot(),
 			},
-			wantCode: http.StatusOK,
-			wantBody: "one" + "two" + testHandlerBody,
+			giveOptions: []ChainInjectorOption{},
+			wantCode:    http.StatusOK,
+			wantBody:    "one" + "two" + testHandlerBody,
 		},
 		{
 			name: "one stop two",
-			give: []Injector{
+			giveInjector: []Injector{
 				newTestInjectorOneOK(),
 				newTestInjectorStop(),
 				newTestInjectorTwoTeapot(),
 			},
-			wantCode: http.StatusOK,
-			wantBody: "one",
+			giveOptions: []ChainInjectorOption{},
+			wantCode:    http.StatusOK,
+			wantBody:    "one",
 		},
 	}
 
@@ -131,7 +159,7 @@ func TestChainInjectorHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			ci, err := NewChainInjector(tt.give)
+			ci, err := NewChainInjector(tt.giveInjector, tt.giveOptions...)
 			assert.NoError(t, err)
 
 			f, err := NewFault(ci,

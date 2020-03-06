@@ -150,7 +150,7 @@ func TestRandomInjectorHandler(t *testing.T) {
 				newTestInjectorTwoTeapot(),
 			},
 			giveOptions: nil,
-			// With defaultRandSeed we will always choose the second item
+			// defaultRandSeed will choose 1
 			wantCode: http.StatusTeapot,
 			wantBody: "two" + testHandlerBody,
 		},
@@ -166,7 +166,7 @@ func TestRandomInjectorHandler(t *testing.T) {
 				newTestInjectorTwoTeapot(),
 			},
 			giveOptions: nil,
-			// With defaultRandSeed we will always choose the seventh item
+			// defaultRandSeed will choose 6
 			wantCode: http.StatusTeapot,
 			wantBody: "two" + testHandlerBody,
 		},
@@ -184,8 +184,7 @@ func TestRandomInjectorHandler(t *testing.T) {
 			giveOptions: []RandomInjectorOption{
 				WithRandIntFunc(func(int) int { return 2 }),
 			},
-			// With defaultRandSeed we will always choose the seventh item. We expect
-			// our custom function to choose the third item instead.
+			// defaultRandSeed will choose 6. Custom function should choose 2.
 			wantCode: http.StatusTeapot,
 			wantBody: "two" + testHandlerBody,
 		},
