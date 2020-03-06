@@ -177,28 +177,18 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 		// will evaluate, if everything is configured correctly.
 		var shouldEvaluate bool
 
-		if f.enabled {
-			shouldEvaluate = true
-		}
+		shouldEvaluate = f.enabled
 
-		// false is path is in blacklist
-		if shouldEvaluate {
-			if _, ok := f.pathBlacklist[r.URL.Path]; ok {
-				shouldEvaluate = false
-			}
-		}
+		// false if path is in blacklist
+		shouldEvaluate = shouldEvaluate && !f.pathBlacklist[r.URL.Path]
 
 		// false if whitelist exists and path is not in it
-		if shouldEvaluate && len(f.pathWhitelist) > 0 {
-			if _, ok := f.pathWhitelist[r.URL.Path]; !ok {
-				shouldEvaluate = false
-			}
+		if len(f.pathWhitelist) > 0 {
+			shouldEvaluate = shouldEvaluate && f.pathWhitelist[r.URL.Path]
 		}
 
 		// false if not selected for participation
-		if shouldEvaluate {
-			shouldEvaluate = f.participate()
-		}
+		shouldEvaluate = shouldEvaluate && f.participate()
 
 		// run the injector or pass
 		if shouldEvaluate {
