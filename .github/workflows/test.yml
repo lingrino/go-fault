@@ -1,0 +1,10 @@
+name: Benchstat
+
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test
+        run: echo $(hostname)
