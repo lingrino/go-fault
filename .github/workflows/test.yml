@@ -1,4 +1,4 @@
-name: Benchstat
+name: test
 
 on: push
 
