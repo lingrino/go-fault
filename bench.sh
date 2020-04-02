@@ -22,7 +22,7 @@ prep_env() {
     ddkey=${DATADOG_API_KEY:?"ERROR: DATADOG_API_KEY is not set"}
 
     # Static Variables
-    benchtime="1ms"             # amount of time the benchmark should run for
+    benchtime="10s"             # amount of time the benchmark should run for
     metric_namespace="go_fault" # prefix for published metrics
     currenttime="$(date +%s)"   # the current time epoch seconds
 
@@ -179,7 +179,9 @@ publish_metric() {
     local input
     input="$1"
 
-    curl -X POST -H "Content-type: application/json" -d "$input" "https://api.datadoghq.com/api/v1/series?api_key=${ddkey}"
+    local output
+    output="$(curl -sS -X POST -H "Content-type: application/json" -d "$input" "https://api.datadoghq.com/api/v1/series?api_key=${ddkey}")"
+    printf "%s\n" "$output"
 }
 
 prep_env
