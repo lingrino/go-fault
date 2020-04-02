@@ -1,0 +1,20 @@
+name: Benchmark
+
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: 0 */3 * * * # Every 3 hours
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Run bench.sh
+        run: ./bench.sh
+        shell: bash
+        env:
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
