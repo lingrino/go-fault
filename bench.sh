@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # This script runs a go benchmark, parses the results, and uploads them to datadog.
 # Publishes all three metrics that benchmarks produce (ns/op, bytes/op, allocs/op).
@@ -12,6 +12,7 @@
 # CPU count is stripped from benchmark name. Recommended you publish using same machine type.
 # Run locally by exporting DATADOG_API_KEY. Local runs are tagged with environment:local
 
+# Exit on error
 set -e -o pipefail
 
 # Exit if required environment variables are not set.
