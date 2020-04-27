@@ -38,7 +38,7 @@ func testRequest(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 	return rr
 }
 
-// testRequestExpectPanic runs testRequest and catches/passes if panic(http.ErrAbortHandler)
+// testRequestExpectPanic runs testRequest and catches/passes if panic(http.ErrAbortHandler).
 func testRequestExpectPanic(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 	t.Helper()
 

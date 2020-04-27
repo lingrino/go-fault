@@ -126,7 +126,7 @@ func (o randSeedOption) applyFault(f *Fault) error {
 	return nil
 }
 
-// WithRandSeed sets the rand.Rand seed for this struct
+// WithRandSeed sets the rand.Rand seed for this struct.
 func WithRandSeed(s int64) RandSeedOption {
 	return randSeedOption(s)
 }

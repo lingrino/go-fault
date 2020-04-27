@@ -13,6 +13,7 @@ linters:
     - goconst
     - gocritic
     - gocyclo
+    - godot
     - godox
     - gofmt
     - goimports
@@ -26,6 +27,7 @@ linters:
     - lll
     - misspell
     - nakedret
+    - nestif
     - prealloc
     - rowserrcheck
     - scopelint
@@ -39,20 +41,25 @@ linters:
     - varcheck
     - whitespace
   disable:
-    - wsl # too strict
     - interfacer # deprecated
     - maligned # not worth savings
+    - wsl # too strict
 
 linters-settings:
+  dupl:
+    threshold: 100
+  errcheck:
+    check-blank: true
   gocognit:
-    min-complexity: 30
+    min-complexity: 10
+  goconst:
+    min-occurrences: 2
   gocyclo:
-    min-complexity: 30
-  gomnd:
-    settings:
-      mnd:
-        # don't include the "operation" and "assign"
-        checks: argument,case,condition,return
+    min-complexity: 10
+  golint:
+    min-confidence: 0
+  nakedret:
+    max-func-lines: 0
 
 issues:
   exclude-rules:
@@ -60,8 +67,7 @@ issues:
       linters:
         - dupl # many functions in tests look like duplicates
         - funlen # test function can be very long due to test cases
-        - gomnd # there are many magic numbers in tests
-    - path: example_*_test.go
+    - path: (example|benchmark)_.*test.go
       linters:
-        - errcheck # not required to check errors in examples
-        - ineffassign # not required to check errors in examples
+        - errcheck # not required to check errors in examples/benchmarks
+        - ineffassign # not required to check errors in examples/benchmarks

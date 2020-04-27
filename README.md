@@ -1,7 +1,5 @@
 # Fault
 
-[GoDoc](https://godoc.githubapp.com/github.com/github/go-fault)
-
 The fault package provides go middleware that makes it easy to inject faults into your service. Use the fault package to reject incoming requests, respond with an HTTP error, inject latency into a percentage of your requests, or evaluate any of your own custom faults.
 
 ## Usage
