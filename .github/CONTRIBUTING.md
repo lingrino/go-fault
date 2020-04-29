@@ -23,7 +23,7 @@ Please note that this project is released with a [Contributor Code of Conduct][c
 
 Here are a few things you can do that will increase the likelihood of your pull request being accepted:
 
-- Write tests.
+- Write tests that fully cover the code you've added.
 - Write code that passes the linter: `golangci-lint run`
 - Write code that maintains or decreases benchmarks: `go test -run=XXX -bench=. -benchmem`
 - Keep your change as focused as possible. If there are multiple changes you would like to make that are not dependent upon each other, consider submitting them as separate pull requests.
