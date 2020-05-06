@@ -1,6 +1,26 @@
 # Fault
 
-The fault package provides go middleware that makes it easy to inject faults into your service. Use the fault package to reject incoming requests, respond with an HTTP error, inject latency into a percentage of your requests, or evaluate any of your own custom faults.
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/github/go-fault?tab=doc)
+
+The fault package provides go http middleware that makes it easy to inject faults into your service. Use the fault package to reject incoming requests, respond with an HTTP error, inject latency into a percentage of your requests, or inject any of your own custom faults.
+
+## Features
+
+The fault package works through [standard go http middleware](https://pkg.go.dev/net/http/?tab=doc#Handler). You first create an `Injector`, which is a middleware with the code to be run on injection. Then you wrap that `Injector` in a `Fault` which handles logic about when to run your `Injector`.
+
+There are currently three kinds of injectors: `SlowInjector`, `ErrorInjector`, and `RejectInjector`. Each of these injectors can be configured thorugh a `Fault` to run on a small percent of your requests. You can also configure the `Fault` to blacklist/whitelist certain paths.
+
+See the usage section below for an example of how to get started and the [godoc](https://pkg.go.dev/github.com/github/go-fault?tab=doc) for further documentation.
+
+## Limitations
+
+This package is useful for safely testing failure scenarios in go services that can make use of `net/http` handlers/middleware.
+
+One common failure scenario that we cannot perfectly simulate is dropped requests. The `RejectInjector` will always return immiediately to the user, but in many cases requests can be dropped without ever sending a response. The best way to simulate this scenario using the fault packge is to chain a `SlowInjector` with a very long wait time in front of an eventual `RejectInjector`.
+
+## Status
+
+This project is in a stable and supported state. There are no plans to introduce significant new features however we welcome and encourage any ideas and contributions from the community. Contributions should follow the guidelines in our [CONTRIBUTING.md](.github/CONTRIBUTING.md).
 
 ## Usage
 
@@ -32,6 +52,10 @@ func main() {
         http.ListenAndServe("127.0.0.1:3000", handlerChain)
 }
 ```
+
+## Development
+
+This package uses standard go tooling for testing and development. The [go](https://golang.org/dl/) language is all you need to contribute. Tests use the popular [testify/assert](https://github.com/stretchr/testify/) which will be downloaded automatically the first time you run tests. GitHub Actions will also run a linter using [golangci-lint](https://github.com/golangci/golangci-lint) after you push. You can also download the linter and use `golangci-lint run` to run locally.
 
 ## Testing
 
@@ -67,3 +91,11 @@ BenchmarkFaultError100Percent-8           663661              1833 ns/op
 PASS
 ok      github.com/github/go-fault      8.814s
 ```
+
+## Maintainers
+
+@lingrino
+
+## License
+
+This project is licensed under the [MIT License](LICENSE.md).
