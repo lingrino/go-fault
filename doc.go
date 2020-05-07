@@ -65,12 +65,12 @@ which consolidates any number of Injectors into a single Injector that runs each
 Injectors sequentially. When you add the ChainInjector to a Fault the entire chain will always
 execute together.
 
-Blacklisting & Whitelisting Paths
+Allowing & Blocking Paths
 
-The NewFault() constructor has WithPathBlacklist() and WithPathWhitelist() options. Any path you
-include in the PathBlacklist will never have faults run against it. With PathWhitelist, if you
+The NewFault() constructor has WithPathBlocklist() and WithPathAllowlist() options. Any path you
+include in the PathBlocklist will never have faults run against it. With PathAllowlist, if you
 provide a non-empty list then faults will not be run against any paths except those specified in
-PathWhitelist. The PathBlacklist take priority over the PathWhitelist, a path in both lists will
+PathAllowlist. The PathBlocklist take priority over the PathAllowlist, a path in both lists will
 never have a fault run against it. The paths that you include must match exactly the path in
 req.URL.Path, including leading and trailing slashes.
 

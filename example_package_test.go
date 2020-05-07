@@ -24,7 +24,7 @@ func Example() {
 	f, _ := fault.NewFault(ci,
 		fault.WithEnabled(true),
 		fault.WithParticipation(1.0),
-		fault.WithPathBlacklist([]string{"/ping", "/health"}),
+		fault.WithPathBlocklist([]string{"/ping", "/health"}),
 	)
 
 	// mainHandler responds 200/OK

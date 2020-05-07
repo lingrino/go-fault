@@ -30,11 +30,11 @@ type Fault struct {
 	// participation is the percent of requests that run the injector. 0.0 <= p <= 1.0.
 	participation float32
 
-	// pathBlacklist is a map of paths that the Injector will not run against.
-	pathBlacklist map[string]bool
+	// pathBlocklist is a map of paths that the Injector will not run against.
+	pathBlocklist map[string]bool
 
-	// pathWhitelist, if set, is a map of the only paths that the Injector will run against.
-	pathWhitelist map[string]bool
+	// pathAllowlist, if set, is a map of the only paths that the Injector will run against.
+	pathAllowlist map[string]bool
 
 	// randSeed is a number to seed rand with.
 	randSeed int64
@@ -81,36 +81,36 @@ func WithParticipation(p float32) Option {
 	return participationOption(p)
 }
 
-type pathBlacklistOption []string
+type pathBlocklistOption []string
 
-func (o pathBlacklistOption) applyFault(f *Fault) error {
-	blacklist := make(map[string]bool, len(o))
+func (o pathBlocklistOption) applyFault(f *Fault) error {
+	blocklist := make(map[string]bool, len(o))
 	for _, path := range o {
-		blacklist[path] = true
+		blocklist[path] = true
 	}
-	f.pathBlacklist = blacklist
+	f.pathBlocklist = blocklist
 	return nil
 }
 
-// WithPathBlacklist is a list of paths that the Injector will not run against.
-func WithPathBlacklist(blacklist []string) Option {
-	return pathBlacklistOption(blacklist)
+// WithPathBlocklist is a list of paths that the Injector will not run against.
+func WithPathBlocklist(blocklist []string) Option {
+	return pathBlocklistOption(blocklist)
 }
 
-type pathWhitelistOption []string
+type pathAllowlistOption []string
 
-func (o pathWhitelistOption) applyFault(f *Fault) error {
-	whitelist := make(map[string]bool, len(o))
+func (o pathAllowlistOption) applyFault(f *Fault) error {
+	allowlist := make(map[string]bool, len(o))
 	for _, path := range o {
-		whitelist[path] = true
+		allowlist[path] = true
 	}
-	f.pathWhitelist = whitelist
+	f.pathAllowlist = allowlist
 	return nil
 }
 
-// WithPathWhitelist is, if set, a list of the only paths that the Injector will run against.
-func WithPathWhitelist(whitelist []string) Option {
-	return pathWhitelistOption(whitelist)
+// WithPathAllowlist is, if set, a list of the only paths that the Injector will run against.
+func WithPathAllowlist(allowlist []string) Option {
+	return pathAllowlistOption(allowlist)
 }
 
 // RandSeedOption configures things that can set a random seed.
@@ -183,12 +183,12 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 
 		shouldEvaluate = f.enabled
 
-		// false if path is in blacklist
-		shouldEvaluate = shouldEvaluate && !f.pathBlacklist[r.URL.Path]
+		// false if path is in blocklist
+		shouldEvaluate = shouldEvaluate && !f.pathBlocklist[r.URL.Path]
 
-		// false if whitelist exists and path is not in it
-		if len(f.pathWhitelist) > 0 {
-			shouldEvaluate = shouldEvaluate && f.pathWhitelist[r.URL.Path]
+		// false if allowlist exists and path is not in it
+		if len(f.pathAllowlist) > 0 {
+			shouldEvaluate = shouldEvaluate && f.pathAllowlist[r.URL.Path]
 		}
 
 		// false if not selected for participation
