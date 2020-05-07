@@ -21,28 +21,28 @@ func ExampleNewFault() {
 	// Output: <nil>
 }
 
-// ExampleNewFault_blacklist shows how to create a new Fault with a path blacklist.
-func ExampleNewFault_blacklist() {
+// ExampleNewFault_blocklist shows how to create a new Fault with a path blocklist.
+func ExampleNewFault_blocklist() {
 	ei, err := fault.NewErrorInjector(http.StatusInternalServerError)
 
 	_, err = fault.NewFault(ei,
 		fault.WithEnabled(true),
 		fault.WithParticipation(0.25),
-		fault.WithPathBlacklist([]string{"/ping", "/health"}),
+		fault.WithPathBlocklist([]string{"/ping", "/health"}),
 	)
 
 	fmt.Println(err)
 	// Output: <nil>
 }
 
-// ExampleNewFault_whitelist shows how to create a new Fault with a path whitelist.
-func ExampleNewFault_whitelist() {
+// ExampleNewFault_allowlist shows how to create a new Fault with a path allowlist.
+func ExampleNewFault_allowlist() {
 	ei, err := fault.NewErrorInjector(http.StatusInternalServerError)
 
 	_, err = fault.NewFault(ei,
 		fault.WithEnabled(true),
 		fault.WithParticipation(0.25),
-		fault.WithPathWhitelist([]string{"/injecthere", "/andhere"}),
+		fault.WithPathAllowlist([]string{"/injecthere", "/andhere"}),
 	)
 
 	fmt.Println(err)
