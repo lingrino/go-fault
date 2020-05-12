@@ -252,7 +252,7 @@ func (f *Fault) checkAllowBlockLists(shouldEvaluate bool, r *http.Request) bool 
 		shouldEvaluate = shouldEvaluate && !(r.Header.Get(key) == val)
 	}
 
-	// false if headerAllowlist exists and path is not in it
+	// false if headerAllowlist exists and headers are not in it
 	if len(f.headerAllowlist) > 0 {
 		for key, val := range f.headerAllowlist {
 			shouldEvaluate = shouldEvaluate && (r.Header.Get(key) == val)
