@@ -43,6 +43,7 @@ func ExampleNewFault_allowlist() {
 		fault.WithEnabled(true),
 		fault.WithParticipation(0.25),
 		fault.WithPathAllowlist([]string{"/injecthere", "/andhere"}),
+		fault.WithHeaderAllowlist(map[string]string{"allow": "this header"}),
 	)
 
 	fmt.Println(err)
