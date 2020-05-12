@@ -15,6 +15,8 @@ const (
 	// test response and other standard responses.
 	testHandlerCode = http.StatusAccepted
 	testHandlerBody = "Accepted"
+	testHeaderKey   = "testing header key"
+	testHeaderVal   = "testing header val"
 )
 
 // testRequest simulates a request to testHandler with a Fault injected.
@@ -26,6 +28,8 @@ func testRequest(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 	})
 
 	req := httptest.NewRequest("GET", "/", nil)
+	req.Header.Add(testHeaderKey, testHeaderVal)
+
 	rr := httptest.NewRecorder()
 
 	if f != nil {

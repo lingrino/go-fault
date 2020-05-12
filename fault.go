@@ -30,11 +30,17 @@ type Fault struct {
 	// participation is the percent of requests that run the injector. 0.0 <= p <= 1.0.
 	participation float32
 
-	// pathBlocklist is a map of paths that the Injector will not run against.
+	// pathBlocklist is a map of paths that the Injector will never run against.
 	pathBlocklist map[string]bool
 
 	// pathAllowlist, if set, is a map of the only paths that the Injector will run against.
 	pathAllowlist map[string]bool
+
+	// headerBlocklist is a map of headers that the Injector will never run against.
+	headerBlocklist map[string]string
+
+	// headerAllowlist, if set, is a map of the only headers the Injector will run against.
+	headerAllowlist map[string]string
 
 	// randSeed is a number to seed rand with.
 	randSeed int64
@@ -113,6 +119,39 @@ func WithPathAllowlist(allowlist []string) Option {
 	return pathAllowlistOption(allowlist)
 }
 
+type headerBlocklistOption map[string]string
+
+func (o headerBlocklistOption) applyFault(f *Fault) error {
+	blocklist := make(map[string]string, len(o))
+	for key, val := range o {
+		blocklist[key] = val
+	}
+	f.headerBlocklist = blocklist
+	return nil
+}
+
+// WithHeaderBlocklist is a map of header keys to values that the Injector will not run against.
+func WithHeaderBlocklist(blocklist map[string]string) Option {
+	return headerBlocklistOption(blocklist)
+}
+
+type headerAllowlistOption map[string]string
+
+func (o headerAllowlistOption) applyFault(f *Fault) error {
+	allowlist := make(map[string]string, len(o))
+	for key, val := range o {
+		allowlist[key] = val
+	}
+	f.headerAllowlist = allowlist
+	return nil
+}
+
+// WithHeaderAllowlist is, if set, a map of header keys to values of the only headers that the
+// Injector will run against.
+func WithHeaderAllowlist(allowlist map[string]string) Option {
+	return headerAllowlistOption(allowlist)
+}
+
 // RandSeedOption configures things that can set a random seed.
 type RandSeedOption interface {
 	Option
@@ -183,13 +222,7 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 
 		shouldEvaluate = f.enabled
 
-		// false if path is in blocklist
-		shouldEvaluate = shouldEvaluate && !f.pathBlocklist[r.URL.Path]
-
-		// false if allowlist exists and path is not in it
-		if len(f.pathAllowlist) > 0 {
-			shouldEvaluate = shouldEvaluate && f.pathAllowlist[r.URL.Path]
-		}
+		shouldEvaluate = shouldEvaluate && f.checkAllowBlockLists(shouldEvaluate, r)
 
 		// false if not selected for participation
 		shouldEvaluate = shouldEvaluate && f.participate()
@@ -201,6 +234,32 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		}
 	})
+}
+
+// checkAllowBlockLists checks the request against the provided allowlists and blocklists, returning
+// true if the request may proceed and false otherwise.
+func (f *Fault) checkAllowBlockLists(shouldEvaluate bool, r *http.Request) bool {
+	// false if path is in pathBlocklist
+	shouldEvaluate = shouldEvaluate && !f.pathBlocklist[r.URL.Path]
+
+	// false if pathAllowlist exists and path is not in it
+	if len(f.pathAllowlist) > 0 {
+		shouldEvaluate = shouldEvaluate && f.pathAllowlist[r.URL.Path]
+	}
+
+	// false if any headers match headerBlocklist
+	for key, val := range f.headerBlocklist {
+		shouldEvaluate = shouldEvaluate && !(r.Header.Get(key) == val)
+	}
+
+	// false if headerAllowlist exists and path is not in it
+	if len(f.headerAllowlist) > 0 {
+		for key, val := range f.headerAllowlist {
+			shouldEvaluate = shouldEvaluate && (r.Header.Get(key) == val)
+		}
+	}
+
+	return shouldEvaluate
 }
 
 // participate randomly decides (returns true) if the Injector should run based on f.participation.
