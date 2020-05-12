@@ -261,6 +261,18 @@ func TestFaultHandler(t *testing.T) {
 			wantBody: testHandlerBody,
 		},
 		{
+			name:         "disabled with with path/header allowlists",
+			giveInjector: newTestInjector500s(),
+			giveOptions: []Option{
+				WithEnabled(false),
+				WithParticipation(1.0),
+				WithPathAllowlist([]string{"/"}),
+				WithHeaderAllowlist(map[string]string{testHeaderKey: testHeaderVal}),
+			},
+			wantCode: testHandlerCode,
+			wantBody: testHandlerBody,
+		},
+		{
 			name:         "100 percent inject nothing",
 			giveInjector: newTestInjectorNoop(),
 			giveOptions: []Option{
