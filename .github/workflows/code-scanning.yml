@@ -1,0 +1,19 @@
+name: Code Scanning
+
+on:
+  push:
+  schedule:
+    - cron: 0 14 * * 2 # Every Tuesday at 14:00 UTC
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Initialize
+        uses: github/codeql-action/init@v1
+        with:
+          languages: go
+      - name: Analyze
+        uses: github/codeql-action/analyze@v1
