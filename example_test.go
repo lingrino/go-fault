@@ -21,7 +21,7 @@ func ExampleNewFault() {
 	// Output: <nil>
 }
 
-// ExampleNewFault_blocklist shows how to create a new Fault with a path blocklist.
+// ExampleNewFault_blocklist shows how to create a new Fault with a path/header blocklist.
 func ExampleNewFault_blocklist() {
 	ei, err := fault.NewErrorInjector(http.StatusInternalServerError)
 
@@ -29,13 +29,14 @@ func ExampleNewFault_blocklist() {
 		fault.WithEnabled(true),
 		fault.WithParticipation(0.25),
 		fault.WithPathBlocklist([]string{"/ping", "/health"}),
+		fault.WithHeaderBlocklist(map[string]string{"block": "this header"}),
 	)
 
 	fmt.Println(err)
 	// Output: <nil>
 }
 
-// ExampleNewFault_allowlist shows how to create a new Fault with a path allowlist.
+// ExampleNewFault_allowlist shows how to create a new Fault with a path/header allowlist.
 func ExampleNewFault_allowlist() {
 	ei, err := fault.NewErrorInjector(http.StatusInternalServerError)
 
@@ -43,6 +44,7 @@ func ExampleNewFault_allowlist() {
 		fault.WithEnabled(true),
 		fault.WithParticipation(0.25),
 		fault.WithPathAllowlist([]string{"/injecthere", "/andhere"}),
+		fault.WithHeaderAllowlist(map[string]string{"allow": "this header"}),
 	)
 
 	fmt.Println(err)

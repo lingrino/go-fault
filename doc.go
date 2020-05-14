@@ -74,9 +74,15 @@ PathAllowlist. The PathBlocklist take priority over the PathAllowlist, a path in
 never have a fault run against it. The paths that you include must match exactly the path in
 req.URL.Path, including leading and trailing slashes.
 
-Specifying very large lists of paths may cause memory or performance issues. If you're running into
-these problems you should instead consider using your http router to enable the middleware on only a
-subset of your routes.
+Simmilarly, you may also use WithHeaderBlocklist() and WithHeaderAllowlist() to block or allow
+faults based on a map of header keys to values. These lists behave in the same way as the path
+allowlists and blocklists except that they operate on headers. Header equality is determined using
+http.Header.Get(key) which automatically canonicalizes your keys and does not support multi-value
+headers. Keep these limitations in mind when working with header allowlists and blocklists.
+
+Specifying very large lists of paths or headers may cause memory or performance issues. If you're
+running into these problems you should instead consider using your http router to enable the
+middleware on only a subset of your routes.
 
 Custom Injectors
 
