@@ -94,7 +94,13 @@ ok      github.com/github/go-fault      8.814s
 
 ## Maintainers
 
-@lingrino
+[@lingrino](https://github.com/lingrino)
+
+### Contributors
+
+[@mrfaizal](https://github.com/mrfaizal)
+[@vroldanbet](https://github.com/vroldanbet)
+[@fatih](https://github.com/fatih)
 
 ## License
 
