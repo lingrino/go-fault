@@ -1,6 +1,6 @@
 # Fault
 
-[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/github/go-fault?tab=doc)
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/github/go-fault?tab=doc) [![goreportcard](https://goreportcard.com/badge/github.com/github/go-fault)](https://goreportcard.com/report/github.com/github/go-fault)
 
 The fault package provides go http middleware that makes it easy to inject faults into your service. Use the fault package to reject incoming requests, respond with an HTTP error, inject latency into a percentage of your requests, or inject any of your own custom faults.
 
@@ -59,7 +59,7 @@ This package uses standard go tooling for testing and development. The [go](http
 
 ## Testing
 
-The fault package has extensive tests that are run in [GitHub Actions](https://github.com/github/go-fault/actions?query=workflow%3AValidate) on every push.
+The fault package has extensive tests that are run in [GitHub Actions](https://github.com/github/go-fault/actions?query=workflow%3AValidate) on every push. Code coverage is 100% and is published as an artifact on every Actions run.
 
 You can also run tests locally:
 

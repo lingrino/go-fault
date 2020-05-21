@@ -8,8 +8,11 @@ import (
 type InjectorState int
 
 const (
+	// StateStarted when an Injector has started.
 	StateStarted InjectorState = iota + 1
+	// StateFinished when an Injector has finished.
 	StateFinished
+	// StateSkipped when an Injector is skipped.
 	StateSkipped
 )
 
