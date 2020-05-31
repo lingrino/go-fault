@@ -65,7 +65,7 @@ which consolidates any number of Injectors into a single Injector that runs each
 Injectors sequentially. When you add the ChainInjector to a Fault the entire chain will always
 execute together.
 
-Allowing & Blocking Paths
+Allowing And Blocking Paths
 
 The NewFault() constructor has WithPathBlocklist() and WithPathAllowlist() options. Any path you
 include in the PathBlocklist will never have faults run against it. With PathAllowlist, if you
