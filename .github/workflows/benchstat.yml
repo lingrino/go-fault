@@ -1,5 +1,5 @@
 # This workflow runs benchmarks against the current branch, compares them to benchmarks against
-# master, and uploads the results as an artifact. Unlike in the Validate workflow we only test these
+# main, and uploads the results as an artifact. Unlike in the Validate workflow we only test these
 # benchmarks against the latest versions of Go and the Runner.
 
 # This workflow could be improved by only running on pull requests and then posting the results back
@@ -39,7 +39,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
         with:
-          ref: master
+          ref: main
       - name: Benchmark
         run: |
           for i in {1..5}; do

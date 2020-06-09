@@ -3,7 +3,7 @@ name: Benchmark
 on:
   push:
     branches:
-      - master
+      - main
   schedule:
     - cron: 0 */3 * * * # Every 3 hours
 
