@@ -11,19 +11,21 @@ import (
 // ExampleNewFault shows how to create a new Fault.
 func ExampleNewFault() {
 	ei, err := fault.NewErrorInjector(http.StatusInternalServerError)
+	fmt.Print(err)
 
 	_, err = fault.NewFault(ei,
 		fault.WithEnabled(true),
 		fault.WithParticipation(0.25),
 	)
 
-	fmt.Println(err)
-	// Output: <nil>
+	fmt.Print(err)
+	// Output: <nil><nil>
 }
 
 // ExampleNewFault_blocklist shows how to create a new Fault with a path/header blocklist.
 func ExampleNewFault_blocklist() {
 	ei, err := fault.NewErrorInjector(http.StatusInternalServerError)
+	fmt.Print(err)
 
 	_, err = fault.NewFault(ei,
 		fault.WithEnabled(true),
@@ -32,13 +34,14 @@ func ExampleNewFault_blocklist() {
 		fault.WithHeaderBlocklist(map[string]string{"block": "this header"}),
 	)
 
-	fmt.Println(err)
-	// Output: <nil>
+	fmt.Print(err)
+	// Output: <nil><nil>
 }
 
 // ExampleNewFault_allowlist shows how to create a new Fault with a path/header allowlist.
 func ExampleNewFault_allowlist() {
 	ei, err := fault.NewErrorInjector(http.StatusInternalServerError)
+	fmt.Print(err)
 
 	_, err = fault.NewFault(ei,
 		fault.WithEnabled(true),
@@ -47,37 +50,41 @@ func ExampleNewFault_allowlist() {
 		fault.WithHeaderAllowlist(map[string]string{"allow": "this header"}),
 	)
 
-	fmt.Println(err)
-	// Output: <nil>
+	fmt.Print(err)
+	// Output: <nil><nil>
 }
 
 // ExampleNewChainInjector shows how to create a new ChainInjector.
 func ExampleNewChainInjector() {
 	si, err := fault.NewSlowInjector(time.Minute)
+	fmt.Print(err)
 	ri, err := fault.NewRejectInjector()
+	fmt.Print(err)
 
 	_, err = fault.NewChainInjector([]fault.Injector{si, ri})
 
-	fmt.Println(err)
-	// Output: <nil>
+	fmt.Print(err)
+	// Output: <nil><nil><nil>
 }
 
 // ExampleNewChainInjector shows how to create a new RandomInjector.
 func ExampleNewRandomInjector() {
 	si, err := fault.NewSlowInjector(time.Minute)
+	fmt.Print(err)
 	ri, err := fault.NewRejectInjector()
+	fmt.Print(err)
 
 	_, err = fault.NewRandomInjector([]fault.Injector{si, ri})
 
-	fmt.Println(err)
-	// Output: <nil>
+	fmt.Print(err)
+	// Output: <nil><nil><nil>
 }
 
 // ExampleNewRejectInjector shows how to create a new RejectInjector.
 func ExampleNewRejectInjector() {
 	_, err := fault.NewRejectInjector()
 
-	fmt.Println(err)
+	fmt.Print(err)
 	// Output: <nil>
 }
 
@@ -85,7 +92,7 @@ func ExampleNewRejectInjector() {
 func ExampleNewErrorInjector() {
 	_, err := fault.NewErrorInjector(http.StatusInternalServerError)
 
-	fmt.Println(err)
+	fmt.Print(err)
 	// Output: <nil>
 }
 
@@ -93,6 +100,6 @@ func ExampleNewErrorInjector() {
 func ExampleNewSlowInjector() {
 	_, err := fault.NewSlowInjector(time.Second * 10)
 
-	fmt.Println(err)
+	fmt.Print(err)
 	// Output: <nil>
 }

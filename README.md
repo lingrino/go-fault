@@ -30,12 +30,13 @@ package main
 
 import (
         "net/http"
+        "time"
 
         "github.com/github/go-fault"
 )
 
 var mainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        http.Error(w, testHandlerBody, testHandlerCode)
+        http.Error(w, http.StatusText(http.StatusOK), http.StatusOK)
 })
 
 func main() {
