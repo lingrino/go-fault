@@ -48,7 +48,7 @@ func testRequestExpectPanic(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 
 	defer func() {
 		if r := recover(); r != nil {
-			if r != http.ErrAbortHandler {
+			if !errors.Is(r.(error), http.ErrAbortHandler) {
 				t.Fatal(r)
 			}
 		}

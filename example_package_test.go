@@ -1,6 +1,7 @@
 package fault_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -36,7 +37,7 @@ func Example() {
 	handlerChain := f.Handler((mainHandler))
 
 	// Create dummy request and response records
-	req, _ := http.NewRequest("GET", "/", nil)
+	req, _ := http.NewRequestWithContext(context.Background(), "GET", "/", nil)
 	rr := httptest.NewRecorder()
 
 	// Run our request
