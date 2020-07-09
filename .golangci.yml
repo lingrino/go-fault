@@ -6,6 +6,7 @@ linters:
     - dogsled
     - dupl
     - errcheck
+    - exportloopref
     - funlen
     - gochecknoglobals
     - gochecknoinits
@@ -15,7 +16,9 @@ linters:
     - gocyclo
     - godot
     - godox
+    - goerr13
     - gofmt
+    - gofumpt
     - goimports
     - golint
     - gomnd
@@ -28,6 +31,8 @@ linters:
     - misspell
     - nakedret
     - nestif
+    - noctx
+    - nolintlint
     - prealloc
     - rowserrcheck
     - scopelint
