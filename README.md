@@ -8,7 +8,7 @@ The fault package provides go http middleware that makes it easy to inject fault
 
 The fault package works through [standard go http middleware](https://pkg.go.dev/net/http/?tab=doc#Handler). You first create an `Injector`, which is a middleware with the code to be run on injection. Then you wrap that `Injector` in a `Fault` which handles logic about when to run your `Injector`.
 
-There are currently three kinds of injectors: `SlowInjector`, `ErrorInjector`, and `RejectInjector`. Each of these injectors can be configured thorugh a `Fault` to run on a small percent of your requests. You can also configure the `Fault` to blocklist/allowlist certain paths.
+There are currently three kinds of injectors: `SlowInjector`, `ErrorInjector`, and `RejectInjector`. Each of these injectors can be configured through a `Fault` to run on a small percent of your requests. You can also configure the `Fault` to blocklist/allowlist certain paths.
 
 See the usage section below for an example of how to get started and the [godoc](https://pkg.go.dev/github.com/github/go-fault?tab=doc) for further documentation.
 
@@ -16,7 +16,7 @@ See the usage section below for an example of how to get started and the [godoc]
 
 This package is useful for safely testing failure scenarios in go services that can make use of `net/http` handlers/middleware.
 
-One common failure scenario that we cannot perfectly simulate is dropped requests. The `RejectInjector` will always return immiediately to the user, but in many cases requests can be dropped without ever sending a response. The best way to simulate this scenario using the fault packge is to chain a `SlowInjector` with a very long wait time in front of an eventual `RejectInjector`.
+One common failure scenario that we cannot perfectly simulate is dropped requests. The `RejectInjector` will always return immediately to the user, but in many cases requests can be dropped without ever sending a response. The best way to simulate this scenario using the fault package is to chain a `SlowInjector` with a very long wait time in front of an eventual `RejectInjector`.
 
 ## Status
 
