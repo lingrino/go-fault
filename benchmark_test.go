@@ -1,6 +1,7 @@
 package fault_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,7 +19,7 @@ func benchmarkRequest(b *testing.B, f *fault.Fault) *httptest.ResponseRecorder {
 	})
 
 	// If we instead use httptest.NewRequest here our benchmark times will approximately double.
-	req, _ := http.NewRequest("GET", "/", nil)
+	req, _ := http.NewRequestWithContext(context.Background(), "GET", "/", nil)
 	rr := httptest.NewRecorder()
 
 	if f != nil {
