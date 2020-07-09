@@ -18,7 +18,6 @@ linters:
     - godox
     - goerr113
     - gofmt
-    - gofumpt
     - goimports
     - golint
     - gomnd
