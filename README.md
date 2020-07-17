@@ -1,6 +1,6 @@
 # Fault
 
-[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat)](https://pkg.go.dev/github.com/github/go-fault?tab=doc) [![goreportcard](https://goreportcard.com/badge/github.com/github/go-fault)](https://goreportcard.com/report/github.com/github/go-fault)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/github/go-fault)](https://pkg.go.dev/github.com/github/go-fault) [![goreportcard](https://goreportcard.com/badge/github.com/github/go-fault)](https://goreportcard.com/report/github.com/github/go-fault)
 
 The fault package provides go http middleware that makes it easy to inject faults into your service. Use the fault package to reject incoming requests, respond with an HTTP error, inject latency into a percentage of your requests, or inject any of your own custom faults.
 
