@@ -4,7 +4,7 @@ on:
   push:
   pull_request:
   schedule:
-    - cron: 0 14 * * 2 # Every Tuesday at 14:00 UTC
+    - cron: 0 16 * * 2 # Every Tuesday at 16:00 UTC
 
 jobs:
   scan:
