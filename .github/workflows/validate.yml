@@ -23,7 +23,7 @@ jobs:
           cp /tmp/golangci-lint/golangci-lint-${GOLANGCILINT_VERSION}-linux-amd64/golangci-lint ${HOME}/golangci-lint
           rm -rf /tmp/golangci-lint.tar.gz /tmp/golangci-lint
         env:
-          GOLANGCILINT_VERSION: 1.29.0 # https://github.com/golangci/golangci-lint/releases
+          GOLANGCILINT_VERSION: 1.31.0 # https://github.com/golangci/golangci-lint/releases
       - name: Checkout
         uses: actions/checkout@v2
       - name: Format
