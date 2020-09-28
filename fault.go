@@ -236,6 +236,16 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 	})
 }
 
+// SetEnabled updates the enabled state of the Fault.
+func (f *Fault) SetEnabled(o enabledOption) error {
+	return o.applyFault(f)
+}
+
+// SetParticipation updates the participation percentage of the Fault.
+func (f *Fault) SetParticipation(o participationOption) error {
+	return o.applyFault(f)
+}
+
 // checkAllowBlockLists checks the request against the provided allowlists and blocklists, returning
 // true if the request may proceed and false otherwise.
 func (f *Fault) checkAllowBlockLists(shouldEvaluate bool, r *http.Request) bool {
