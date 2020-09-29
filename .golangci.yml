@@ -67,6 +67,9 @@ linters-settings:
 
 issues:
   exclude-rules:
+    - text: "G404:" # Ignore weak random number generator lint. We do not need strong randomness here.
+      linters:
+        - gosec
     - path: _test.go
       linters:
         - dupl # many functions in tests look like duplicates
