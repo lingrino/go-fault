@@ -123,10 +123,11 @@ to NewSlowInjector().
 
 Configuration
 
-All configuration for the fault package is done through options passed to NewFault and NewInjector.
-There is no other way to manage configuration for the package. It is up to the user of the fault
-package to manage how the options are generated. Common options are feature flags, environment
-variables, or code changes in deploys.
+Configuration for the fault package is done through options passed to NewFault and NewInjector. Once
+a Fault is created its enabled state and participation percentage can be updated with SetEnabled()
+and SetParticipation(). There is no other way to manage configuration for the package. It is up to
+the user of the fault package to manage how the options are generated. Common options are feature
+flags, environment variables, or code changes in deploys.
 
 */
 package fault

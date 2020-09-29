@@ -300,6 +300,50 @@ func TestFaultHandler(t *testing.T) {
 	}
 }
 
+// TestFaultSetEnabled tests Fault.SetEnabled().
+func TestFaultSetEnabled(t *testing.T) {
+	t.Parallel()
+
+	f, err := NewFault(newTestInjector500s(),
+		WithEnabled(true),
+		WithParticipation(1.0),
+	)
+	assert.NoError(t, err)
+
+	rr := testRequest(t, f)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+	assert.Equal(t, http.StatusText(http.StatusInternalServerError), strings.TrimSpace(rr.Body.String()))
+
+	err = f.SetEnabled(false)
+	assert.NoError(t, err)
+
+	rr = testRequest(t, f)
+	assert.Equal(t, testHandlerCode, rr.Code)
+	assert.Equal(t, testHandlerBody, strings.TrimSpace(rr.Body.String()))
+}
+
+// TestFaultSetParticipation tests Fault.SetParticipation().
+func TestFaultSetParticipation(t *testing.T) {
+	t.Parallel()
+
+	f, err := NewFault(newTestInjector500s(),
+		WithEnabled(true),
+		WithParticipation(1.0),
+	)
+	assert.NoError(t, err)
+
+	rr := testRequest(t, f)
+	assert.Equal(t, http.StatusInternalServerError, rr.Code)
+	assert.Equal(t, http.StatusText(http.StatusInternalServerError), strings.TrimSpace(rr.Body.String()))
+
+	err = f.SetParticipation(0.0)
+	assert.NoError(t, err)
+
+	rr = testRequest(t, f)
+	assert.Equal(t, testHandlerCode, rr.Code)
+	assert.Equal(t, testHandlerBody, strings.TrimSpace(rr.Body.String()))
+}
+
 // TestFaultPercentDo tests the internal Fault.participate().
 func TestFaultPercentDo(t *testing.T) {
 	t.Parallel()
