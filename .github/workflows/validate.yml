@@ -25,7 +25,7 @@ jobs:
         env:
           GOLANGCILINT_VERSION: 1.37.0 # https://github.com/golangci/golangci-lint/releases
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.4
       - name: Format
         run: test -z $(gofmt -l -w -s ./)
       - name: Lint
