@@ -106,3 +106,7 @@ ok      github.com/github/go-fault      8.814s
 ## License
 
 This project is licensed under the [MIT License](LICENSE.md).
+
+## Want to file an issue?
+
+Please head over to the [github.com/github/go](https://github.com/github/go/issues) repository. The frameworks-services team owns many libraries, and keeping issues filed in one place helps us track and prioritize them accordingly. Thank you!
