@@ -19,7 +19,6 @@ linters:
     - goerr113
     - gofmt
     - goimports
-    - golint
     - gomnd
     - goprintffuncname
     - gosec
@@ -34,7 +33,6 @@ linters:
     - nolintlint
     - prealloc
     - rowserrcheck
-    - scopelint
     - staticcheck
     - structcheck
     - stylecheck
