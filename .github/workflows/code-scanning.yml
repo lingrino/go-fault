@@ -1,7 +1,6 @@
 name: Code Scanning
 
 on:
-  push:
   pull_request:
   schedule:
     - cron: 0 16 * * 2 # Every Tuesday at 16:00 UTC
