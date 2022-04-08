@@ -61,11 +61,11 @@ jobs:
       - name: Install benchstat
         run: go install golang.org/x/perf/cmd/benchstat@latest
       - name: Download Incoming
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: bench-incoming
       - name: Download Current
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: bench-current
       - name: Benchstat Results
