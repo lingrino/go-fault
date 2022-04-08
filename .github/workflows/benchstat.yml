@@ -25,7 +25,7 @@ jobs:
             go test -run=XXX -bench=. | tee -a bench.txt
           done
       - name: Upload Benchmark
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: bench-incoming
           path: bench.txt
@@ -46,7 +46,7 @@ jobs:
             go test -run=XXX -bench=. | tee -a bench.txt
           done
       - name: Upload Benchmark
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: bench-current
           path: bench.txt
@@ -71,7 +71,7 @@ jobs:
       - name: Benchstat Results
         run: benchstat bench-current/bench.txt bench-incoming/bench.txt | tee -a benchstat.txt
       - name: Upload benchstat results
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: benchstat
           path: benchstat.txt
