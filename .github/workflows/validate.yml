@@ -8,7 +8,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        go-version: [1.17.x, 1.18.x]
+        go-version: [1.18.x, 1.19.x]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Install Go
@@ -23,7 +23,7 @@ jobs:
           cp /tmp/golangci-lint/golangci-lint-${GOLANGCILINT_VERSION}-linux-amd64/golangci-lint ${HOME}/golangci-lint
           rm -rf /tmp/golangci-lint.tar.gz /tmp/golangci-lint
         env:
-          GOLANGCILINT_VERSION: 1.45.2 # https://github.com/golangci/golangci-lint/releases
+          GOLANGCILINT_VERSION: 1.48.0 # https://github.com/golangci/golangci-lint/releases
       - name: Checkout
         uses: actions/checkout@v3
       - name: Format
