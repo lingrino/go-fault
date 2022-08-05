@@ -1,7 +1,7 @@
 /*
 Package fault provides standard http middleware for fault injection in go.
 
-Basics
+# Basics
 
 Use the fault package to inject faults into the http request path of your service. Faults work by
 modifying and/or delaying your service's http responses. Place the Fault middleware high enough in
@@ -16,41 +16,41 @@ applies generic Fault logic (such as what % of requests to run the Injector on) 
 Make sure you use the NewFault() and NewTypeInjector() constructors to create valid Faults and
 Injectors.
 
-Injectors
+# Injectors
 
 There are three main Injectors provided by the fault package:
 
-    fault.RejectInjector
-    fault.ErrorInjector
-    fault.SlowInjector
+	fault.RejectInjector
+	fault.ErrorInjector
+	fault.SlowInjector
 
-RejectInjector
+# RejectInjector
 
 Use fault.RejectInjector to immediately return an empty response. For example, a curl for a rejected
 response will produce:
 
-    $ curl https://github.com
-    curl: (52) Empty reply from server
+	$ curl https://github.com
+	curl: (52) Empty reply from server
 
-ErrorInjector
+# ErrorInjector
 
 Use fault.ErrorInjector to immediately return a valid http status code of your choosing along with
 the standard HTTP response body for that code. For example, you can return a 200, 301, 418, 500, or
 any other valid status code to test how your clients respond to different statuses. Pass the
 WithStatusText() option to customize the response text.
 
-SlowInjector
+# SlowInjector
 
 Use fault.SlowInjector to wait a configured time.Duration before proceeding with the request. For
 example, you can use the SlowInjector to add a 10ms delay to your requests.
 
-RandomInjector
+# RandomInjector
 
 Use fault.RandomInjector to randomly choose one of the above faults to inject. Pass a list of
 Injector to fault.NewRandomInjector and when RandomInjector is evaluated it will randomly run one of
 the injectors that you passed.
 
-Combining Faults
+# Combining Faults
 
 It is easy to combine any of the Injectors into a chained action. There are two ways you might want
 to combine Injectors.
@@ -65,7 +65,7 @@ which consolidates any number of Injectors into a single Injector that runs each
 Injectors sequentially. When you add the ChainInjector to a Fault the entire chain will always
 execute together.
 
-Allowing And Blocking Paths
+# Allowing And Blocking Paths
 
 The NewFault() constructor has WithPathBlocklist() and WithPathAllowlist() options. Any path you
 include in the PathBlocklist will never have faults run against it. With PathAllowlist, if you
@@ -84,13 +84,13 @@ Specifying very large lists of paths or headers may cause memory or performance 
 running into these problems you should instead consider using your http router to enable the
 middleware on only a subset of your routes.
 
-Custom Injectors
+# Custom Injectors
 
 The fault package provides an Injector interface and you can satisfy that interface to provide your
 own Injector. Use custom injectors to add additional logic to the package-provided injectors or to
 create your own completely new Injector that can still be managed by a Fault.
 
-Reporter
+# Reporter
 
 The package provides a Reporter interface that can be added to Faults and Injectors using the
 WithReporter option. A Reporter will receive events when the state of the Injector changes. For
@@ -98,13 +98,13 @@ example, Reporter.Report(InjectorName, StateStarted) is run at the beginning of 
 Reporter is meant to be provided by the consumer of the package and integrate with services like
 stats and logging. The default Reporter throws away all events.
 
-Random Seeds
+# Random Seeds
 
 By default all randomness is seeded with defaultRandSeed(1), the same default as math/rand. This
 helps you reproduce any errors you see when running an Injector. If you prefer, you can also
 customize the seed passing WithRandSeed() to NewFault and NewRandomInjector.
 
-Custom Injector Functions
+# Custom Injector Functions
 
 Some Injectors support customizing the functions they use to run their injections. You can take
 advantage of these options to add your own logic to an existing Injector instead of creating your
@@ -121,13 +121,12 @@ passing WithRandIntFunc() to NewRandomInjector().
 Customize the function a SlowInjector uses to wait (default: time.Sleep) by passing WithSlowFunc()
 to NewSlowInjector().
 
-Configuration
+# Configuration
 
 Configuration for the fault package is done through options passed to NewFault and NewInjector. Once
 a Fault is created its enabled state and participation percentage can be updated with SetEnabled()
 and SetParticipation(). There is no other way to manage configuration for the package. It is up to
 the user of the fault package to manage how the options are generated. Common options are feature
 flags, environment variables, or code changes in deploys.
-
 */
 package fault
