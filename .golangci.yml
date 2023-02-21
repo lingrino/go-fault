@@ -1,7 +1,6 @@
 linters:
   enable:
     - bodyclose
-    - deadcode
     - depguard
     - dogsled
     - dupl
@@ -34,18 +33,12 @@ linters:
     - prealloc
     - rowserrcheck
     - staticcheck
-    - structcheck
     - stylecheck
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
     - whitespace
-  disable:
-    - interfacer # deprecated
-    - maligned # not worth savings
-    - wsl # too strict
 
 linters-settings:
   dupl:
