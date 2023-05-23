@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"time"
 
-	"github.com/github/go-fault"
+	"github.com/lingrino/go-fault"
 )
 
 // Example is a package-level documentation example.

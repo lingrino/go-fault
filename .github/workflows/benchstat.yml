@@ -2,9 +2,6 @@
 # main, and uploads the results as an artifact. Unlike in the Validate workflow we only test these
 # benchmarks against the latest versions of Go and the Runner.
 
-# This workflow could be improved by only running on pull requests and then posting the results back
-# as a comment in the pull request.
-
 name: Benchstat
 
 on: [push, pull_request]
