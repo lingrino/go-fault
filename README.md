@@ -1,6 +1,6 @@
 # Fault
 
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/github/go-fault)](https://pkg.go.dev/github.com/github/go-fault) [![goreportcard](https://goreportcard.com/badge/github.com/github/go-fault)](https://goreportcard.com/report/github.com/github/go-fault)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/lingrino/go-fault)](https://pkg.go.dev/github.com/lingrino/go-fault) [![goreportcard](https://goreportcard.com/badge/github.com/lingrino/go-fault)](https://goreportcard.com/report/github.com/lingrino/go-fault)
 
 The fault package provides go http middleware that makes it easy to inject faults into your service. Use the fault package to reject incoming requests, respond with an HTTP error, inject latency into a percentage of your requests, or inject any of your own custom faults.
 
@@ -10,7 +10,7 @@ The fault package works through [standard go http middleware](https://pkg.go.dev
 
 There are currently three kinds of injectors: `SlowInjector`, `ErrorInjector`, and `RejectInjector`. Each of these injectors can be configured through a `Fault` to run on a small percent of your requests. You can also configure the `Fault` to blocklist/allowlist certain paths.
 
-See the usage section below for an example of how to get started and the [godoc](https://pkg.go.dev/github.com/github/go-fault?tab=doc) for further documentation.
+See the usage section below for an example of how to get started and the [godoc](https://pkg.go.dev/github.com/lingrino/go-fault?tab=doc) for further documentation.
 
 ## Limitations
 
@@ -32,7 +32,7 @@ import (
         "net/http"
         "time"
 
-        "github.com/github/go-fault"
+        "github.com/lingrino/go-fault"
 )
 
 var mainHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -60,7 +60,7 @@ This package uses standard go tooling for testing and development. The [go](http
 
 ## Testing
 
-The fault package has extensive tests that are run in [GitHub Actions](https://github.com/github/go-fault/actions?query=workflow%3AValidate) on every push. Code coverage is 100% and is published as an artifact on every Actions run.
+The fault package has extensive tests that are run in [GitHub Actions](https://github.com/lingrino/go-fault/actions?query=workflow%3AValidate) on every push. Code coverage is 100% and is published as an artifact on every Actions run.
 
 You can also run tests locally:
 
@@ -69,14 +69,14 @@ $ go test -v -cover -race ./...
 [...]
 PASS
 coverage: 100.0% of statements
-ok      github.com/github/go-fault      0.575s
+ok      github.com/lingrino/go-fault      0.575s
 ```
 
 ## Benchmarks
 
 The fault package is safe to leave implemented even when you are not running a fault injection. While the fault is disabled there is negligible performance degradation compared to removing the package from the request path. While enabled there may be minor performance differences, but this will only be the case *while you are already injecting faults.*
 
-Benchmarks are provided to compare without faults, with faults disabled, and with faults enabled. Benchmarks are uploaded as artifacts in GitHub Actions and you can download them from any [Validate Workflow](https://github.com/github/go-fault/actions?query=workflow%3AValidate).
+Benchmarks are provided to compare without faults, with faults disabled, and with faults enabled. Benchmarks are uploaded as artifacts in GitHub Actions and you can download them from any [Validate Workflow](https://github.com/lingrino/go-fault/actions?query=workflow%3AValidate).
 
 You can also run benchmarks locally (example output):
 
@@ -84,13 +84,13 @@ You can also run benchmarks locally (example output):
 $ go test -run=XXX -bench=.
 goos: darwin
 goarch: amd64
-pkg: github.com/github/go-fault
+pkg: github.com/lingrino/go-fault
 BenchmarkNoFault-8                        684826              1734 ns/op
 BenchmarkFaultDisabled-8                  675291              1771 ns/op
 BenchmarkFaultErrorZeroPercent-8          667903              1823 ns/op
 BenchmarkFaultError100Percent-8           663661              1833 ns/op
 PASS
-ok      github.com/github/go-fault      8.814s
+ok      github.com/lingrino/go-fault      8.814s
 ```
 
 ## Maintainers

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/github/go-fault"
+	"github.com/lingrino/go-fault"
 )
 
 // ExampleNewFault shows how to create a new Fault.

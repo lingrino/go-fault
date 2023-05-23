@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/github/go-fault"
+	"github.com/lingrino/go-fault"
 )
 
 // benchmarkRequest simulates a request with the provided Fault injected.
