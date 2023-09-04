@@ -15,7 +15,7 @@ jobs:
         with:
           go-version: stable
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Benchmark
         run: |
           for i in {1..5}; do
@@ -34,7 +34,7 @@ jobs:
         with:
           go-version: stable
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: main
       - name: Benchmark
