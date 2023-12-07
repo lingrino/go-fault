@@ -64,6 +64,7 @@ issues:
       linters:
         - dupl # many functions in tests look like duplicates
         - funlen # test function can be very long due to test cases
+        - goconst # test function can contain many constants
     - path: (example|benchmark)_.*test.go
       linters:
         - errcheck # not required to check errors in examples/benchmarks
