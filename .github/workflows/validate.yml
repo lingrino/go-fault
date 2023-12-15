@@ -23,16 +23,6 @@ jobs:
         uses: golangci/golangci-lint-action@v3.7.0
       - name: Test
         run: go test -v -race -cover -coverprofile=coverage.txt ./... | tee -a test-results.txt
-      - name: Upload Test Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: test-results.txt
-      - name: Upload Coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: coverage.txt
       - name: Enforce 100% Test Coverage
         run: |
           if ! grep -q "coverage: 100.0% of statements" test-results.txt; then
@@ -44,8 +34,3 @@ jobs:
           for i in {1..5}; do
             go test -run=XXX -bench=. | tee -a bench.txt
           done
-      - name: Upload Benchmark
-        uses: actions/upload-artifact@v4
-        with:
-          name: bench-${{ matrix.os }}-${{ matrix.go-version }}
-          path: bench.txt
