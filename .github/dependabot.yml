@@ -1,31 +1,33 @@
 version: 2
 updates:
   - package-ecosystem: github-actions
+    open-pull-requests-limit: 100
     directory: /
     schedule:
-      time: "16:00"
-      interval: daily
+      time: "08:00"
+      timezone: "America/Los_Angeles"
+      interval: weekly
     allow:
       - dependency-type: all
-    assignees:
-      - lingrino
+    groups:
+      all:
+        patterns:
+          - "*"
     reviewers:
       - lingrino
-    labels:
-      - dependencies
-      - actions
 
   - package-ecosystem: gomod
+    open-pull-requests-limit: 100
     directory: /
     schedule:
-      time: "16:00"
-      interval: daily
+      time: "08:00"
+      timezone: "America/Los_Angeles"
+      interval: weekly
     allow:
       - dependency-type: all
-    assignees:
-      - lingrino
+    groups:
+      all:
+        patterns:
+          - "*"
     reviewers:
       - lingrino
-    labels:
-      - dependencies
-      - go
