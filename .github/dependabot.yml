@@ -8,7 +8,7 @@ updates:
       timezone: "America/Los_Angeles"
       interval: weekly
     allow:
-      - dependency-type: all
+      - dependency-type: direct
     groups:
       all:
         patterns:
@@ -24,7 +24,7 @@ updates:
       timezone: "America/Los_Angeles"
       interval: weekly
     allow:
-      - dependency-type: all
+      - dependency-type: direct
     groups:
       all:
         patterns:
