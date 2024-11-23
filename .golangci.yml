@@ -4,10 +4,11 @@ run:
 linters:
   enable:
     - bodyclose
+    - copyloopvar
     - dogsled
     - dupl
+    - err113
     - errcheck
-    - exportloopref
     - funlen
     - gochecknoglobals
     - gochecknoinits
@@ -17,10 +18,8 @@ linters:
     - gocyclo
     - godot
     - godox
-    - goerr113
     - gofmt
     - goimports
-    - gomnd
     - goprintffuncname
     - gosec
     - gosimple
@@ -28,6 +27,7 @@ linters:
     - ineffassign
     - lll
     - misspell
+    - mnd
     - nakedret
     - nestif
     - noctx
