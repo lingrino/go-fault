@@ -33,7 +33,7 @@ func TestNewChainInjector(t *testing.T) {
 		{
 			name: "one",
 			giveInjector: []Injector{
-				newTestInjectorNoop(),
+				newTestInjectorNoop(t),
 			},
 			giveOptions: []ChainInjectorOption{},
 			wantErr:     nil,
@@ -41,8 +41,8 @@ func TestNewChainInjector(t *testing.T) {
 		{
 			name: "two",
 			giveInjector: []Injector{
-				newTestInjectorNoop(),
-				newTestInjector500s(),
+				newTestInjectorNoop(t),
+				newTestInjector500s(t),
 			},
 			giveOptions: []ChainInjectorOption{},
 			wantErr:     nil,
@@ -50,7 +50,7 @@ func TestNewChainInjector(t *testing.T) {
 		{
 			name: "option error",
 			giveInjector: []Injector{
-				newTestInjectorNoop(),
+				newTestInjectorNoop(t),
 			},
 			giveOptions: []ChainInjectorOption{
 				withError(),
@@ -104,7 +104,7 @@ func TestChainInjectorHandler(t *testing.T) {
 		{
 			name: "one",
 			giveInjector: []Injector{
-				newTestInjectorOneOK(),
+				newTestInjectorOneOK(t),
 			},
 			giveOptions: []ChainInjectorOption{},
 			wantCode:    http.StatusOK,
@@ -113,8 +113,8 @@ func TestChainInjectorHandler(t *testing.T) {
 		{
 			name: "noop one",
 			giveInjector: []Injector{
-				newTestInjectorNoop(),
-				newTestInjectorOneOK(),
+				newTestInjectorNoop(t),
+				newTestInjectorOneOK(t),
 			},
 			giveOptions: []ChainInjectorOption{},
 			wantCode:    http.StatusOK,
@@ -123,8 +123,8 @@ func TestChainInjectorHandler(t *testing.T) {
 		{
 			name: "two error",
 			giveInjector: []Injector{
-				newTestInjectorTwoTeapot(),
-				newTestInjector500s(),
+				newTestInjectorTwoTeapot(t),
+				newTestInjector500s(t),
 			},
 			giveOptions: []ChainInjectorOption{},
 			wantCode:    http.StatusTeapot,
@@ -133,8 +133,8 @@ func TestChainInjectorHandler(t *testing.T) {
 		{
 			name: "one two",
 			giveInjector: []Injector{
-				newTestInjectorOneOK(),
-				newTestInjectorTwoTeapot(),
+				newTestInjectorOneOK(t),
+				newTestInjectorTwoTeapot(t),
 			},
 			giveOptions: []ChainInjectorOption{},
 			wantCode:    http.StatusOK,
@@ -143,9 +143,9 @@ func TestChainInjectorHandler(t *testing.T) {
 		{
 			name: "one stop two",
 			giveInjector: []Injector{
-				newTestInjectorOneOK(),
-				newTestInjectorStop(),
-				newTestInjectorTwoTeapot(),
+				newTestInjectorOneOK(t),
+				newTestInjectorStop(t),
+				newTestInjectorTwoTeapot(t),
 			},
 			giveOptions: []ChainInjectorOption{},
 			wantCode:    http.StatusOK,

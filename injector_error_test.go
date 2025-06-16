@@ -60,12 +60,12 @@ func TestNewErrorInjector(t *testing.T) {
 			name:     "custom reporter",
 			giveCode: http.StatusOK,
 			giveOptions: []ErrorInjectorOption{
-				WithReporter(newTestReporter()),
+				WithReporter(newTestReporter(t)),
 			},
 			want: &ErrorInjector{
 				statusCode: http.StatusOK,
 				statusText: http.StatusText(http.StatusOK),
-				reporter:   newTestReporter(),
+				reporter:   newTestReporter(t),
 			},
 			wantErr: nil,
 		},

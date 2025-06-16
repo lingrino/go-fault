@@ -23,7 +23,7 @@ func TestNewFault(t *testing.T) {
 	}{
 		{
 			name:         "all options",
-			giveInjector: newTestInjectorNoop(),
+			giveInjector: newTestInjectorNoop(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(1.0),
@@ -36,7 +36,7 @@ func TestNewFault(t *testing.T) {
 			},
 			wantFault: &Fault{
 				enabled:       true,
-				injector:      newTestInjectorNoop(),
+				injector:      newTestInjectorNoop(t),
 				participation: 1.0,
 				pathBlocklist: map[string]bool{
 					"/donotinject": true,
@@ -65,7 +65,7 @@ func TestNewFault(t *testing.T) {
 		},
 		{
 			name:         "invalid percent",
-			giveInjector: newTestInjectorNoop(),
+			giveInjector: newTestInjectorNoop(t),
 			giveOptions: []Option{
 				WithParticipation(100.0),
 			},
@@ -74,7 +74,7 @@ func TestNewFault(t *testing.T) {
 		},
 		{
 			name:         "option error",
-			giveInjector: newTestInjectorNoop(),
+			giveInjector: newTestInjectorNoop(t),
 			giveOptions: []Option{
 				withError(),
 			},
@@ -83,11 +83,11 @@ func TestNewFault(t *testing.T) {
 		},
 		{
 			name:         "empty options",
-			giveInjector: newTestInjectorNoop(),
+			giveInjector: newTestInjectorNoop(t),
 			giveOptions:  []Option{},
 			wantFault: &Fault{
 				enabled:       false,
-				injector:      newTestInjectorNoop(),
+				injector:      newTestInjectorNoop(t),
 				participation: 0.0,
 				pathBlocklist: nil,
 				pathAllowlist: nil,
@@ -130,7 +130,7 @@ func TestFaultHandler(t *testing.T) {
 	}{
 		{
 			name:         "not enabled",
-			giveInjector: newTestInjectorNoop(),
+			giveInjector: newTestInjectorNoop(t),
 			giveOptions: []Option{
 				WithEnabled(false),
 				WithParticipation(1.0),
@@ -140,7 +140,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "zero percent",
-			giveInjector: newTestInjectorNoop(),
+			giveInjector: newTestInjectorNoop(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(0.0),
@@ -150,7 +150,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s",
-			giveInjector: newTestInjector500s(),
+			giveInjector: newTestInjector500s(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(1.0),
@@ -160,7 +160,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "0 percent 500s custom function",
-			giveInjector: newTestInjector500s(),
+			giveInjector: newTestInjector500s(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(1.0),
@@ -171,7 +171,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s with blocklist root",
-			giveInjector: newTestInjector500s(),
+			giveInjector: newTestInjector500s(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(1.0),
@@ -182,7 +182,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s with allowlist root",
-			giveInjector: newTestInjector500s(),
+			giveInjector: newTestInjector500s(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(1.0),
@@ -193,7 +193,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s with allowlist other",
-			giveInjector: newTestInjector500s(),
+			giveInjector: newTestInjector500s(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(1.0),
@@ -204,7 +204,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s with allowlist and blocklist root",
-			giveInjector: newTestInjector500s(),
+			giveInjector: newTestInjector500s(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(1.0),
@@ -216,7 +216,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s with header block",
-			giveInjector: newTestInjector500s(),
+			giveInjector: newTestInjector500s(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(1.0),
@@ -227,7 +227,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s with header allow",
-			giveInjector: newTestInjector500s(),
+			giveInjector: newTestInjector500s(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(1.0),
@@ -238,7 +238,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s with header allow other",
-			giveInjector: newTestInjector500s(),
+			giveInjector: newTestInjector500s(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(1.0),
@@ -249,7 +249,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent 500s with header allowlist and blocklist",
-			giveInjector: newTestInjector500s(),
+			giveInjector: newTestInjector500s(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(1.0),
@@ -261,7 +261,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "disabled with with path/header allowlists",
-			giveInjector: newTestInjector500s(),
+			giveInjector: newTestInjector500s(t),
 			giveOptions: []Option{
 				WithEnabled(false),
 				WithParticipation(1.0),
@@ -273,7 +273,7 @@ func TestFaultHandler(t *testing.T) {
 		},
 		{
 			name:         "100 percent inject nothing",
-			giveInjector: newTestInjectorNoop(),
+			giveInjector: newTestInjectorNoop(t),
 			giveOptions: []Option{
 				WithEnabled(true),
 				WithParticipation(1.0),
@@ -302,7 +302,7 @@ func TestFaultHandler(t *testing.T) {
 func TestFaultSetEnabled(t *testing.T) {
 	t.Parallel()
 
-	f, err := NewFault(newTestInjector500s(),
+	f, err := NewFault(newTestInjector500s(t),
 		WithEnabled(true),
 		WithParticipation(1.0),
 	)
@@ -324,7 +324,7 @@ func TestFaultSetEnabled(t *testing.T) {
 func TestFaultSetParticipation(t *testing.T) {
 	t.Parallel()
 
-	f, err := NewFault(newTestInjector500s(),
+	f, err := NewFault(newTestInjector500s(t),
 		WithEnabled(true),
 		WithParticipation(1.0),
 	)
@@ -363,7 +363,7 @@ func TestFaultPercentDo(t *testing.T) {
 		t.Run(fmt.Sprintf("%g", tt.givePercent), func(t *testing.T) {
 			t.Parallel()
 
-			f, err := NewFault(newTestInjectorNoop(),
+			f, err := NewFault(newTestInjectorNoop(t),
 				WithParticipation(tt.givePercent),
 			)
 			assert.NoError(t, err)

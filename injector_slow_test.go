@@ -69,12 +69,12 @@ func TestNewSlowInjector(t *testing.T) {
 			name:         "custom reporter",
 			giveDuration: time.Minute,
 			giveOptions: []SlowInjectorOption{
-				WithReporter(newTestReporter()),
+				WithReporter(newTestReporter(t)),
 			},
 			want: &SlowInjector{
 				duration: time.Minute,
 				slowF:    time.Sleep,
-				reporter: newTestReporter(),
+				reporter: newTestReporter(t),
 			},
 			wantErr: nil,
 		},

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -60,22 +62,26 @@ func testRequestExpectPanic(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 }
 
 // testInjectorNoop is an injector that does nothing.
-type testInjectorNoop struct{}
+type testInjectorNoop struct {
+	t *testing.T
+}
 
 // newTestInjectorNoop creates a new testInjectorNoop.
-func newTestInjectorNoop() *testInjectorNoop {
-	return &testInjectorNoop{}
+func newTestInjectorNoop(t *testing.T) *testInjectorNoop {
+	return &testInjectorNoop{t: t}
 }
 
 // Handler does nothing.
 func (i *testInjectorNoop) Handler(next http.Handler) http.Handler { return next }
 
 // testInjectorStop is an injector that stops a request.
-type testInjectorStop struct{}
+type testInjectorStop struct {
+	t *testing.T
+}
 
 // newTestInjectorStop creates a new testInjectorStop.
-func newTestInjectorStop() *testInjectorStop {
-	return &testInjectorStop{}
+func newTestInjectorStop(t *testing.T) *testInjectorStop {
+	return &testInjectorStop{t: t}
 }
 
 // Handler returns a Handler that stops the request.
@@ -84,11 +90,13 @@ func (i *testInjectorStop) Handler(next http.Handler) http.Handler {
 }
 
 // testInjector500s is an injector that returns 500s.
-type testInjector500s struct{}
+type testInjector500s struct {
+	t *testing.T
+}
 
 // newTestInjector500 creates a new testInjector500s.
-func newTestInjector500s() *testInjector500s {
-	return &testInjector500s{}
+func newTestInjector500s(t *testing.T) *testInjector500s {
+	return &testInjector500s{t: t}
 }
 
 // Handler returns a 500.
@@ -99,35 +107,45 @@ func (i *testInjector500s) Handler(next http.Handler) http.Handler {
 }
 
 // testInjectorOneOK is an injector that writes "one" and statusOK.
-type testInjectorOneOK struct{}
+type testInjectorOneOK struct {
+	t *testing.T
+}
 
 // newTestInjectorOneOK creates a new testInjectorOneOK.
-func newTestInjectorOneOK() *testInjectorOneOK {
-	return &testInjectorOneOK{}
+func newTestInjectorOneOK(t *testing.T) *testInjectorOneOK {
+	return &testInjectorOneOK{t: t}
 }
 
 // Handler writes statusOK and "one" and continues.
 func (i *testInjectorOneOK) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, "one")
+
+		_, err := fmt.Fprint(w, "one")
+		assert.NoError(i.t, err)
+
 		next.ServeHTTP(w, r)
 	})
 }
 
 // testInjectorTwoTeapot is an injector that writes "two" and statusTeapot.
-type testInjectorTwoTeapot struct{}
+type testInjectorTwoTeapot struct {
+	t *testing.T
+}
 
 // newTestInjectorTwoTeapot creates a new testInjectorTwoTeapot.
-func newTestInjectorTwoTeapot() *testInjectorTwoTeapot {
-	return &testInjectorTwoTeapot{}
+func newTestInjectorTwoTeapot(t *testing.T) *testInjectorTwoTeapot {
+	return &testInjectorTwoTeapot{t: t}
 }
 
 // Handler writes StatusTeapot and "two" and continues.
 func (i *testInjectorTwoTeapot) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTeapot)
-		fmt.Fprint(w, "two")
+
+		_, err := fmt.Fprint(w, "two")
+		assert.NoError(i.t, err)
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -177,11 +195,13 @@ func withError() errorOption {
 }
 
 // testReporter is a reporter that does nothing.
-type testReporter struct{}
+type testReporter struct {
+	t *testing.T
+}
 
 // NewTestReporter returns a new testReporter.
-func newTestReporter() *testReporter {
-	return &testReporter{}
+func newTestReporter(t *testing.T) *testReporter {
+	return &testReporter{t: t}
 }
 
 // Report does nothing.
