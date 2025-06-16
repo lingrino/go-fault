@@ -37,7 +37,7 @@ func TestNewRandomInjector(t *testing.T) {
 		{
 			name: "one",
 			giveInjector: []Injector{
-				newTestInjectorNoop(),
+				newTestInjectorNoop(t),
 			},
 			giveOptions: nil,
 			wantRand:    rand.New(rand.NewSource(defaultRandSeed)),
@@ -46,8 +46,8 @@ func TestNewRandomInjector(t *testing.T) {
 		{
 			name: "two",
 			giveInjector: []Injector{
-				newTestInjectorNoop(),
-				newTestInjector500s(),
+				newTestInjectorNoop(t),
+				newTestInjector500s(t),
 			},
 			giveOptions: nil,
 			wantRand:    rand.New(rand.NewSource(defaultRandSeed)),
@@ -56,8 +56,8 @@ func TestNewRandomInjector(t *testing.T) {
 		{
 			name: "with seed",
 			giveInjector: []Injector{
-				newTestInjectorNoop(),
-				newTestInjector500s(),
+				newTestInjectorNoop(t),
+				newTestInjector500s(t),
 			},
 			giveOptions: []RandomInjectorOption{
 				WithRandSeed(100),
@@ -68,8 +68,8 @@ func TestNewRandomInjector(t *testing.T) {
 		{
 			name: "with custom function",
 			giveInjector: []Injector{
-				newTestInjectorNoop(),
-				newTestInjector500s(),
+				newTestInjectorNoop(t),
+				newTestInjector500s(t),
 			},
 			giveOptions: []RandomInjectorOption{
 				WithRandIntFunc(func(int) int { return 1 }),
@@ -80,7 +80,7 @@ func TestNewRandomInjector(t *testing.T) {
 		{
 			name: "option error",
 			giveInjector: []Injector{
-				newTestInjectorNoop(),
+				newTestInjectorNoop(t),
 			},
 			giveOptions: []RandomInjectorOption{
 				withError(),
@@ -136,7 +136,7 @@ func TestRandomInjectorHandler(t *testing.T) {
 		{
 			name: "one",
 			give: []Injector{
-				newTestInjectorOneOK(),
+				newTestInjectorOneOK(t),
 			},
 			giveOptions: nil,
 			wantCode:    http.StatusOK,
@@ -145,8 +145,8 @@ func TestRandomInjectorHandler(t *testing.T) {
 		{
 			name: "two",
 			give: []Injector{
-				newTestInjectorOneOK(),
-				newTestInjectorTwoTeapot(),
+				newTestInjectorOneOK(t),
+				newTestInjectorTwoTeapot(t),
 			},
 			giveOptions: nil,
 			// defaultRandSeed will choose 1
@@ -156,13 +156,13 @@ func TestRandomInjectorHandler(t *testing.T) {
 		{
 			name: "seven",
 			give: []Injector{
-				newTestInjectorNoop(),
-				newTestInjectorNoop(),
-				newTestInjectorNoop(),
-				newTestInjectorNoop(),
-				newTestInjectorNoop(),
-				newTestInjectorNoop(),
-				newTestInjectorTwoTeapot(),
+				newTestInjectorNoop(t),
+				newTestInjectorNoop(t),
+				newTestInjectorNoop(t),
+				newTestInjectorNoop(t),
+				newTestInjectorNoop(t),
+				newTestInjectorNoop(t),
+				newTestInjectorTwoTeapot(t),
 			},
 			giveOptions: nil,
 			// defaultRandSeed will choose 6
@@ -172,13 +172,13 @@ func TestRandomInjectorHandler(t *testing.T) {
 		{
 			name: "custom rand func",
 			give: []Injector{
-				newTestInjectorNoop(),
-				newTestInjectorNoop(),
-				newTestInjectorTwoTeapot(),
-				newTestInjectorNoop(),
-				newTestInjectorNoop(),
-				newTestInjectorNoop(),
-				newTestInjectorNoop(),
+				newTestInjectorNoop(t),
+				newTestInjectorNoop(t),
+				newTestInjectorTwoTeapot(t),
+				newTestInjectorNoop(t),
+				newTestInjectorNoop(t),
+				newTestInjectorNoop(t),
+				newTestInjectorNoop(t),
 			},
 			giveOptions: []RandomInjectorOption{
 				WithRandIntFunc(func(int) int { return 2 }),

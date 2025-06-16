@@ -27,10 +27,10 @@ func TestNewRejectInjector(t *testing.T) {
 		{
 			name: "custom reporter",
 			giveOptions: []RejectInjectorOption{
-				WithReporter(newTestReporter()),
+				WithReporter(newTestReporter(t)),
 			},
 			want: &RejectInjector{
-				reporter: newTestReporter(),
+				reporter: newTestReporter(t),
 			},
 			wantErr: nil,
 		},

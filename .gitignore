@@ -22,3 +22,6 @@ old.txt
 # Test Artifacts
 coverage.txt
 test-results.txt
+
+# AI Tools
+.claude

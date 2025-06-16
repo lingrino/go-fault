@@ -259,7 +259,7 @@ func (f *Fault) checkAllowBlockLists(shouldEvaluate bool, r *http.Request) bool 
 
 	// false if any headers match headerBlocklist
 	for key, val := range f.headerBlocklist {
-		shouldEvaluate = shouldEvaluate && !(r.Header.Get(key) == val)
+		shouldEvaluate = shouldEvaluate && r.Header.Get(key) != val
 	}
 
 	// false if headerAllowlist exists and headers are not in it
