@@ -47,12 +47,6 @@ linters:
       max-func-lines: 0
 
   exclusions:
-    # generated: lax
-    # presets:
-    #   - comments
-    #   - common-false-positives
-    #   - legacy
-    #   - std-error-handling
     rules:
       - linters:
           - gosec
@@ -66,17 +60,8 @@ linters:
           - errcheck # not required to check errors in examples/benchmarks
           - ineffassign # not required to check errors in examples/benchmarks
         path: (example|benchmark)_.*test.go
-    # paths:
-    #   - third_party$
-    #   - builtin$
-    #   - examples$
-# formatters:
-#   enable:
-#     - gofmt
-#     - goimports
-#   exclusions:
-#     generated: lax
-#     paths:
-#       - third_party$
-#       - builtin$
-#       - examples$
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
