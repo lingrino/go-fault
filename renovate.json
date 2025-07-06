@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended"
+  ],
+  "timezone": "America/Los_Angeles",
+  "schedule": [
+    "before 8am on monday"
+  ],
+  "prHourlyLimit": 0,
+  "prConcurrentLimit": 100,
+  "reviewers": [
+    "lingrino"
+  ],
+  "packageRules": [
+    {
+      "groupName": "all",
+      "matchManagers": [
+        "github-actions",
+        "gomod"
+      ]
+    }
+  ]
+}
