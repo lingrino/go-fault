@@ -16,7 +16,7 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Format
         run: test -z $(gofmt -l -w -s ./)
       - name: Lint
