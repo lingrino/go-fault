@@ -314,8 +314,7 @@ func TestFaultSetEnabled(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rr.Code)
 	assert.Equal(t, http.StatusText(http.StatusInternalServerError), strings.TrimSpace(rr.Body.String()))
 
-	err = f.SetEnabled(false)
-	assert.NoError(t, err)
+	f.SetEnabled(false)
 
 	rr = testRequest(t, f)
 	assert.Equal(t, testHandlerCode, rr.Code)
@@ -342,6 +341,13 @@ func TestFaultSetParticipation(t *testing.T) {
 	rr = testRequest(t, f)
 	assert.Equal(t, testHandlerCode, rr.Code)
 	assert.Equal(t, testHandlerBody, strings.TrimSpace(rr.Body.String()))
+
+	// Test invalid participation values
+	err = f.SetParticipation(-0.1)
+	assert.Equal(t, ErrInvalidPercent, err)
+
+	err = f.SetParticipation(1.1)
+	assert.Equal(t, ErrInvalidPercent, err)
 }
 
 // TestFaultPercentDo tests the internal Fault.participate().
@@ -412,8 +418,7 @@ func TestFaultConcurrentAccess(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < iterations; i++ {
-			err := f.SetEnabled(enabledOption(i%2 == 0))
-			assert.NoError(t, err)
+			f.SetEnabled(i%2 == 0)
 		}
 	}()
 
@@ -422,7 +427,7 @@ func TestFaultConcurrentAccess(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < iterations; i++ {
-			err := f.SetParticipation(participationOption(float32(i%100) / 100.0))
+			err := f.SetParticipation(float32(i%100) / 100.0)
 			assert.NoError(t, err)
 		}
 	}()

@@ -242,17 +242,22 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 }
 
 // SetEnabled updates the enabled state of the Fault.
-func (f *Fault) SetEnabled(o enabledOption) error {
+func (f *Fault) SetEnabled(enabled bool) {
 	f.stateMtx.Lock()
 	defer f.stateMtx.Unlock()
-	return o.applyFault(f)
+	f.enabled = enabled
 }
 
 // SetParticipation updates the participation percentage of the Fault.
-func (f *Fault) SetParticipation(o participationOption) error {
+// Returns an error if participation is not between 0.0 and 1.0.
+func (f *Fault) SetParticipation(participation float32) error {
+	if participation < 0.0 || participation > 1.0 {
+		return ErrInvalidPercent
+	}
 	f.stateMtx.Lock()
 	defer f.stateMtx.Unlock()
-	return o.applyFault(f)
+	f.participation = participation
+	return nil
 }
 
 // checkAllowBlockLists checks the request against the provided allowlists and blocklists, returning
