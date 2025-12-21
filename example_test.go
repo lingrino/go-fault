@@ -67,7 +67,7 @@ func ExampleNewChainInjector() {
 	// Output: <nil><nil><nil>
 }
 
-// ExampleNewChainInjector shows how to create a new RandomInjector.
+// ExampleNewRandomInjector shows how to create a new RandomInjector.
 func ExampleNewRandomInjector() {
 	si, err := fault.NewSlowInjector(time.Minute)
 	fmt.Print(err)
