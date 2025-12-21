@@ -53,6 +53,9 @@ type Fault struct {
 
 	// randMtx protects Fault.rand, which is not thread safe.
 	randMtx sync.Mutex
+
+	// stateMtx protects enabled and participation for concurrent access.
+	stateMtx sync.RWMutex
 }
 
 // Option configures a Fault.
@@ -220,7 +223,9 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 		// will evaluate, if everything is configured correctly.
 		var shouldEvaluate bool
 
+		f.stateMtx.RLock()
 		shouldEvaluate = f.enabled
+		f.stateMtx.RUnlock()
 
 		shouldEvaluate = shouldEvaluate && f.checkAllowBlockLists(shouldEvaluate, r)
 
@@ -238,11 +243,15 @@ func (f *Fault) Handler(next http.Handler) http.Handler {
 
 // SetEnabled updates the enabled state of the Fault.
 func (f *Fault) SetEnabled(o enabledOption) error {
+	f.stateMtx.Lock()
+	defer f.stateMtx.Unlock()
 	return o.applyFault(f)
 }
 
 // SetParticipation updates the participation percentage of the Fault.
 func (f *Fault) SetParticipation(o participationOption) error {
+	f.stateMtx.Lock()
+	defer f.stateMtx.Unlock()
 	return o.applyFault(f)
 }
 
@@ -275,13 +284,13 @@ func (f *Fault) checkAllowBlockLists(shouldEvaluate bool, r *http.Request) bool 
 // participate randomly decides (returns true) if the Injector should run based on f.participation.
 // Numbers outside of [0.0,1.0] will always return false.
 func (f *Fault) participate() bool {
+	f.stateMtx.RLock()
+	p := f.participation
+	f.stateMtx.RUnlock()
+
 	f.randMtx.Lock()
 	rn := f.randF()
 	f.randMtx.Unlock()
 
-	if rn < f.participation && f.participation <= 1.0 {
-		return true
-	}
-
-	return false
+	return rn < p && p <= 1.0
 }

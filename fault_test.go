@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -385,4 +387,56 @@ func TestFaultPercentDo(t *testing.T) {
 			assert.LessOrEqual(t, per, maxP)
 		})
 	}
+}
+
+// TestFaultConcurrentAccess verifies that SetEnabled and SetParticipation
+// are safe to call concurrently with Handler.
+func TestFaultConcurrentAccess(t *testing.T) {
+	t.Parallel()
+
+	f, err := NewFault(newTestInjectorNoop(t),
+		WithEnabled(true),
+		WithParticipation(0.5),
+	)
+	assert.NoError(t, err)
+
+	handler := f.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	var wg sync.WaitGroup
+	const iterations = 1000
+
+	// Concurrently toggle enabled
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			err := f.SetEnabled(enabledOption(i%2 == 0))
+			assert.NoError(t, err)
+		}
+	}()
+
+	// Concurrently change participation
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			err := f.SetParticipation(participationOption(float32(i%100) / 100.0))
+			assert.NoError(t, err)
+		}
+	}()
+
+	// Concurrently call Handler
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		for i := 0; i < iterations; i++ {
+			req := httptest.NewRequest("GET", "/", nil)
+			rr := httptest.NewRecorder()
+			handler.ServeHTTP(rr, req)
+		}
+	}()
+
+	wg.Wait()
 }
