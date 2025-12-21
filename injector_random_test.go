@@ -28,6 +28,13 @@ func TestNewRandomInjector(t *testing.T) {
 			wantErr:      nil,
 		},
 		{
+			name:         "nil injector in slice",
+			giveInjector: []Injector{nil},
+			giveOptions:  nil,
+			wantRand:     nil,
+			wantErr:      ErrNilInjector,
+		},
+		{
 			name:         "empty",
 			giveInjector: []Injector{},
 			giveOptions:  nil,
