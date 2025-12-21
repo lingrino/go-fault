@@ -1,7 +1,8 @@
-# This workflow runs all of our lints, tests, and other requirements for merging code.
-name: Validate
+name: validate
 
-on: [push, pull_request]
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
 
 jobs:
   validate:
@@ -11,25 +12,25 @@ jobs:
         go-version: [oldstable, stable]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Install Go
+      - name: install go
         uses: actions/setup-go@v6
         with:
           go-version: ${{ matrix.go-version }}
-      - name: Checkout
+      - name: checkout
         uses: actions/checkout@v6
-      - name: Format
+      - name: format
         run: test -z $(gofmt -l -w -s ./)
-      - name: Lint
+      - name: lint
         uses: golangci/golangci-lint-action@v9.2.0
-      - name: Test
+      - name: test
         run: go test -v -race -cover -coverprofile=coverage.txt ./... | tee -a test-results.txt
-      - name: Enforce 100% Test Coverage
+      - name: enforce 100% test coverage
         run: |
           if ! grep -q "coverage: 100.0% of statements" test-results.txt; then
             echo "::error::Test Coverage is not 100%"
             exit 1
           fi
-      - name: Benchmark
+      - name: benchmark
         run: |
           for i in {1..5}; do
             go test -run=XXX -bench=. | tee -a bench.txt
