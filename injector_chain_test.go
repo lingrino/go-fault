@@ -25,6 +25,12 @@ func TestNewChainInjector(t *testing.T) {
 			wantErr:      nil,
 		},
 		{
+			name:         "nil injector in slice",
+			giveInjector: []Injector{nil},
+			giveOptions:  []ChainInjectorOption{},
+			wantErr:      ErrNilInjector,
+		},
+		{
 			name:         "empty",
 			giveInjector: []Injector{},
 			giveOptions:  []ChainInjectorOption{},

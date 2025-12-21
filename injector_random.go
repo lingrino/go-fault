@@ -59,6 +59,9 @@ func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInje
 
 	// set middleware
 	for _, i := range is {
+		if i == nil {
+			return nil, ErrNilInjector
+		}
 		ri.middlewares = append(ri.middlewares, i.Handler)
 	}
 

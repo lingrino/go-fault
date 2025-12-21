@@ -27,6 +27,9 @@ func NewChainInjector(is []Injector, opts ...ChainInjectorOption) (*ChainInjecto
 
 	// set middleware
 	for _, i := range is {
+		if i == nil {
+			return nil, ErrNilInjector
+		}
 		ci.middlewares = append(ci.middlewares, i.Handler)
 	}
 
