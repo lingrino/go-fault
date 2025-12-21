@@ -1,8 +1,6 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
-
-## [2.0.0] - Unreleased
+## [2.0.0]
 
 ### Breaking Changes
 
@@ -70,8 +68,3 @@ All notable changes to this project will be documented in this file.
 ### Improvements
 
 - **Nil injector validation**: `NewChainInjector` and `NewRandomInjector` now return `ErrNilInjector` if any injector in the slice is nil.
-
-### Documentation
-
-- Fixed typos in doc.go
-- Added CLAUDE.md for AI assistant guidance
