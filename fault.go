@@ -278,14 +278,22 @@ func (f *Fault) checkAllowBlockLists(shouldEvaluate bool, r *http.Request) bool 
 		shouldEvaluate = shouldEvaluate && r.Header.Get(key) != val
 	}
 
-	// false if headerAllowlist exists and headers are not in it
+	// false if headerAllowlist exists and no headers match it
 	if len(f.headerAllowlist) > 0 {
-		for key, val := range f.headerAllowlist {
-			shouldEvaluate = shouldEvaluate && (r.Header.Get(key) == val)
-		}
+		shouldEvaluate = shouldEvaluate && f.headerAllowlistMatch(r)
 	}
 
 	return shouldEvaluate
+}
+
+// headerAllowlistMatch returns true if any header in the allowlist matches the request.
+func (f *Fault) headerAllowlistMatch(r *http.Request) bool {
+	for key, val := range f.headerAllowlist {
+		if r.Header.Get(key) == val {
+			return true
+		}
+	}
+	return false
 }
 
 // participate randomly decides (returns true) if the Injector should run based on f.participation.

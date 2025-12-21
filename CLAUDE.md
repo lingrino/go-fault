@@ -44,7 +44,7 @@ This is an HTTP fault injection library for Go. The core abstraction is:
 - `ChainInjector` - Runs multiple injectors sequentially
 - `RandomInjector` - Randomly picks one injector to run
 
-**Reporter** (`reporter.go`) - Interface for observability. Receives `StateStarted`/`StateFinished`/`StateSkipped` events.
+**Reporter** (`reporter.go`) - Interface for observability. Receives `StateStarted`/`StateFinished` events.
 
 ## Code Patterns
 

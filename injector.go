@@ -12,8 +12,6 @@ const (
 	StateStarted InjectorState = iota + 1
 	// StateFinished when an Injector has finished.
 	StateFinished
-	// StateSkipped when an Injector is skipped.
-	StateSkipped
 )
 
 // Injector are added to Faults and run as middleware in a request.
