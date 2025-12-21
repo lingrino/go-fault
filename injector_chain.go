@@ -7,25 +7,10 @@ type ChainInjector struct {
 	middlewares []func(next http.Handler) http.Handler
 }
 
-// ChainInjectorOption configures a ChainInjector.
-type ChainInjectorOption interface {
-	applyChainInjector(i *ChainInjector) error
-}
-
 // NewChainInjector combines many Injectors into a single Injector that runs them in order.
-func NewChainInjector(is []Injector, opts ...ChainInjectorOption) (*ChainInjector, error) {
-	// set defaults
+func NewChainInjector(is []Injector) (*ChainInjector, error) {
 	ci := &ChainInjector{}
 
-	// apply options
-	for _, opt := range opts {
-		err := opt.applyChainInjector(ci)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// set middleware
 	for _, i := range is {
 		if i == nil {
 			return nil, ErrNilInjector

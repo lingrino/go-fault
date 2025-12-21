@@ -158,7 +158,6 @@ var (
 // errorOption returns errErrorOption.
 type errorOption interface {
 	Option
-	ChainInjectorOption
 	RandomInjectorOption
 	RejectInjectorOption
 	ErrorInjectorOption
@@ -168,10 +167,6 @@ type errorOption interface {
 type errorOptionBool bool
 
 func (o errorOptionBool) applyFault(f *Fault) error {
-	return errErrorOption
-}
-
-func (o errorOptionBool) applyChainInjector(f *ChainInjector) error {
 	return errErrorOption
 }
 
