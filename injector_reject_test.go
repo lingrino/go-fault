@@ -88,3 +88,29 @@ func TestRejectInjectorHandler(t *testing.T) {
 		})
 	}
 }
+
+// TestRejectInjectorReporterStates verifies that RejectInjector reports both
+// StateStarted and StateFinished even though it panics with http.ErrAbortHandler.
+func TestRejectInjectorReporterStates(t *testing.T) {
+	t.Parallel()
+
+	reporter := newTestReporter(t)
+
+	ri, err := NewRejectInjector(WithReporter(reporter))
+	assert.NoError(t, err)
+
+	f, err := NewFault(ri,
+		WithEnabled(true),
+		WithParticipation(1.0),
+	)
+	assert.NoError(t, err)
+
+	// This will panic with http.ErrAbortHandler
+	_ = testRequestExpectPanic(t, f)
+
+	// Wait for both StateStarted and StateFinished to be reported (called via goroutines)
+	reporter.waitForStates(2)
+
+	assert.True(t, reporter.hasState(StateStarted), "expected StateStarted to be reported")
+	assert.True(t, reporter.hasState(StateFinished), "expected StateFinished to be reported")
+}

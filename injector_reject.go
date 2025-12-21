@@ -42,6 +42,9 @@ func NewRejectInjector(opts ...RejectInjectorOption) (*RejectInjector, error) {
 func (i *RejectInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		go i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateStarted)
+		defer func() {
+			go i.reporter.Report(reflect.ValueOf(*i).Type().Name(), StateFinished)
+		}()
 
 		// This is a specialized and documented way of sending an interrupted response to
 		// the client without printing the panic stack trace or erroring.
