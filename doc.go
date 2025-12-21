@@ -74,7 +74,7 @@ PathAllowlist. The PathBlocklist take priority over the PathAllowlist, a path in
 never have a fault run against it. The paths that you include must match exactly the path in
 req.URL.Path, including leading and trailing slashes.
 
-Simmilarly, you may also use WithHeaderBlocklist() and WithHeaderAllowlist() to block or allow
+Similarly, you may also use WithHeaderBlocklist() and WithHeaderAllowlist() to block or allow
 faults based on a map of header keys to values. These lists behave in the same way as the path
 allowlists and blocklists except that they operate on headers. Header equality is determined using
 http.Header.Get(key) which automatically canonicalizes your keys and does not support multi-value
@@ -108,9 +108,9 @@ customize the seed passing WithRandSeed() to NewFault and NewRandomInjector.
 
 Some Injectors support customizing the functions they use to run their injections. You can take
 advantage of these options to add your own logic to an existing Injector instead of creating your
-own. For example, modify the SlowInjector function to slow in a rancom distribution instead of for a
+own. For example, modify the SlowInjector function to slow in a random distribution instead of for a
 fixed duration. Be careful when you use these options that your return values fall within the same
-range of values expected by the default functions to avoid panics or other undesirable begavior.
+range of values expected by the default functions to avoid panics or other undesirable behavior.
 
 Customize the function a Fault uses to determine participation (default: rand.Float32) by passing
 WithRandFloat32Func() to NewFault().

@@ -15,8 +15,10 @@ const (
 var (
 	// ErrNilInjector when a nil Injector is passed.
 	ErrNilInjector = errors.New("injector cannot be nil")
-	// ErrInvalidPercent when a percent is outside of [0.0,1.0).
-	ErrInvalidPercent = errors.New("percent must be 0.0 <= percent <= 1.0")
+	// ErrInvalidParticipation when participation is outside of [0.0,1.0].
+	ErrInvalidParticipation = errors.New("participation must be 0.0 <= participation <= 1.0")
+	// ErrEmptyInjectorSlice when an empty slice of Injectors is passed to RandomInjector.
+	ErrEmptyInjectorSlice = errors.New("injector slice must not be empty")
 )
 
 // Fault combines an Injector with options on when to use that Injector.
@@ -79,7 +81,7 @@ type participationOption float32
 
 func (o participationOption) applyFault(f *Fault) error {
 	if o < 0.0 || o > 1.0 {
-		return ErrInvalidPercent
+		return ErrInvalidParticipation
 	}
 	f.participation = float32(o)
 	return nil
@@ -252,7 +254,7 @@ func (f *Fault) SetEnabled(enabled bool) {
 // Returns an error if participation is not between 0.0 and 1.0.
 func (f *Fault) SetParticipation(participation float32) error {
 	if participation < 0.0 || participation > 1.0 {
-		return ErrInvalidPercent
+		return ErrInvalidParticipation
 	}
 	f.stateMtx.Lock()
 	defer f.stateMtx.Unlock()

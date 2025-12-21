@@ -72,7 +72,7 @@ func TestNewFault(t *testing.T) {
 				WithParticipation(100.0),
 			},
 			wantFault: nil,
-			wantErr:   ErrInvalidPercent,
+			wantErr:   ErrInvalidParticipation,
 		},
 		{
 			name:         "option error",
@@ -356,10 +356,10 @@ func TestFaultSetParticipation(t *testing.T) {
 
 	// Test invalid participation values
 	err = f.SetParticipation(-0.1)
-	assert.Equal(t, ErrInvalidPercent, err)
+	assert.Equal(t, ErrInvalidParticipation, err)
 
 	err = f.SetParticipation(1.1)
-	assert.Equal(t, ErrInvalidPercent, err)
+	assert.Equal(t, ErrInvalidParticipation, err)
 }
 
 // TestFaultPercentDo tests the internal Fault.participate().
