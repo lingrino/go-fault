@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -194,15 +195,33 @@ func withError() errorOption {
 	return errorOptionBool(true)
 }
 
-// testReporter is a reporter that does nothing.
+// testReporter is a reporter that records states for assertions.
 type testReporter struct {
-	t *testing.T
+	t      *testing.T
+	mu     sync.Mutex
+	states []InjectorState
 }
 
-// NewTestReporter returns a new testReporter.
+// newTestReporter returns a new testReporter.
 func newTestReporter(t *testing.T) *testReporter {
 	return &testReporter{t: t}
 }
 
-// Report does nothing.
-func (r *testReporter) Report(name string, state InjectorState) {}
+// Report records the state.
+func (r *testReporter) Report(name string, state InjectorState) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.states = append(r.states, state)
+}
+
+// hasState returns true if the given state was reported.
+func (r *testReporter) hasState(state InjectorState) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, s := range r.states {
+		if s == state {
+			return true
+		}
+	}
+	return false
+}

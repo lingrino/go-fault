@@ -2,6 +2,7 @@ package fault
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -87,4 +88,30 @@ func TestRejectInjectorHandler(t *testing.T) {
 			assert.Nil(t, rr)
 		})
 	}
+}
+
+// TestRejectInjectorReporterStates verifies that RejectInjector reports both
+// StateStarted and StateFinished even though it panics with http.ErrAbortHandler.
+func TestRejectInjectorReporterStates(t *testing.T) {
+	t.Parallel()
+
+	reporter := newTestReporter(t)
+
+	ri, err := NewRejectInjector(WithReporter(reporter))
+	assert.NoError(t, err)
+
+	f, err := NewFault(ri,
+		WithEnabled(true),
+		WithParticipation(1.0),
+	)
+	assert.NoError(t, err)
+
+	// This will panic with http.ErrAbortHandler
+	_ = testRequestExpectPanic(t, f)
+
+	// Give the goroutine time to run (reporter is called with 'go')
+	time.Sleep(50 * time.Millisecond)
+
+	assert.True(t, reporter.hasState(StateStarted), "expected StateStarted to be reported")
+	assert.True(t, reporter.hasState(StateFinished), "expected StateFinished to be reported")
 }
