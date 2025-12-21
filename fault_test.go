@@ -250,6 +250,18 @@ func TestFaultHandler(t *testing.T) {
 			wantBody: testHandlerBody,
 		},
 		{
+			name:         "100 percent 500s with header allow any match",
+			giveInjector: newTestInjector500s(t),
+			giveOptions: []Option{
+				WithEnabled(true),
+				WithParticipation(1.0),
+				// One header matches (testHeaderKey), one doesn't - should still inject
+				WithHeaderAllowlist(map[string]string{testHeaderKey: testHeaderVal, "other": "not in request"}),
+			},
+			wantCode: http.StatusInternalServerError,
+			wantBody: http.StatusText(http.StatusInternalServerError),
+		},
+		{
 			name:         "100 percent 500s with header allowlist and blocklist",
 			giveInjector: newTestInjector500s(t),
 			giveOptions: []Option{
