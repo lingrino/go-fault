@@ -284,17 +284,13 @@ func (f *Fault) checkAllowBlockLists(shouldEvaluate bool, r *http.Request) bool 
 // participate randomly decides (returns true) if the Injector should run based on f.participation.
 // Numbers outside of [0.0,1.0] will always return false.
 func (f *Fault) participate() bool {
+	f.stateMtx.RLock()
+	p := f.participation
+	f.stateMtx.RUnlock()
+
 	f.randMtx.Lock()
 	rn := f.randF()
 	f.randMtx.Unlock()
 
-	f.stateMtx.RLock()
-	participation := f.participation
-	f.stateMtx.RUnlock()
-
-	if rn < participation && participation <= 1.0 {
-		return true
-	}
-
-	return false
+	return rn < p && p <= 1.0
 }
