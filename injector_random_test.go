@@ -24,8 +24,8 @@ func TestNewRandomInjector(t *testing.T) {
 			name:         "nil",
 			giveInjector: nil,
 			giveOptions:  nil,
-			wantRand:     rand.New(rand.NewSource(defaultRandSeed)),
-			wantErr:      nil,
+			wantRand:     nil,
+			wantErr:      ErrEmptyInjectorSlice,
 		},
 		{
 			name:         "nil injector in slice",
@@ -38,8 +38,8 @@ func TestNewRandomInjector(t *testing.T) {
 			name:         "empty",
 			giveInjector: []Injector{},
 			giveOptions:  nil,
-			wantRand:     rand.New(rand.NewSource(defaultRandSeed)),
-			wantErr:      nil,
+			wantRand:     nil,
+			wantErr:      ErrEmptyInjectorSlice,
 		},
 		{
 			name: "one",
@@ -126,20 +126,6 @@ func TestRandomInjectorHandler(t *testing.T) {
 		wantCode    int
 		wantBody    string
 	}{
-		{
-			name:        "nil",
-			give:        nil,
-			giveOptions: nil,
-			wantCode:    testHandlerCode,
-			wantBody:    testHandlerBody,
-		},
-		{
-			name:        "empty",
-			give:        []Injector{},
-			giveOptions: nil,
-			wantCode:    testHandlerCode,
-			wantBody:    testHandlerBody,
-		},
 		{
 			name: "one",
 			give: []Injector{

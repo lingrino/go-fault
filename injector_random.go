@@ -43,6 +43,10 @@ func WithRandIntFunc(f func(int) int) RandomInjectorOption {
 
 // NewRandomInjector combines many Injectors into a single Injector that runs one randomly.
 func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInjector, error) {
+	if len(is) == 0 {
+		return nil, ErrEmptyInjectorSlice
+	}
+
 	// set defaults
 	ri := &RandomInjector{
 		randSeed: defaultRandSeed,
@@ -77,14 +81,10 @@ func NewRandomInjector(is []Injector, opts ...RandomInjectorOption) (*RandomInje
 // Handler executes a random Injector from RandomInjector.middlewares.
 func (i *RandomInjector) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if len(i.middlewares) > 0 {
-			i.randMtx.Lock()
-			randIdx := i.randF(len(i.middlewares))
-			i.randMtx.Unlock()
+		i.randMtx.Lock()
+		randIdx := i.randF(len(i.middlewares))
+		i.randMtx.Unlock()
 
-			i.middlewares[randIdx](next).ServeHTTP(w, r)
-		} else {
-			next.ServeHTTP(w, r)
-		}
+		i.middlewares[randIdx](next).ServeHTTP(w, r)
 	})
 }
