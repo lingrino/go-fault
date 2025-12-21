@@ -199,19 +199,23 @@ func withError() errorOption {
 type testReporter struct {
 	t      *testing.T
 	mu     sync.Mutex
+	cond   *sync.Cond
 	states []InjectorState
 }
 
 // newTestReporter returns a new testReporter.
 func newTestReporter(t *testing.T) *testReporter {
-	return &testReporter{t: t}
+	r := &testReporter{t: t}
+	r.cond = sync.NewCond(&r.mu)
+	return r
 }
 
-// Report records the state.
+// Report records the state and signals any waiters.
 func (r *testReporter) Report(name string, state InjectorState) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.states = append(r.states, state)
+	r.cond.Broadcast()
 }
 
 // hasState returns true if the given state was reported.
@@ -224,4 +228,13 @@ func (r *testReporter) hasState(state InjectorState) bool {
 		}
 	}
 	return false
+}
+
+// waitForStates blocks until at least n states have been reported.
+func (r *testReporter) waitForStates(n int) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for len(r.states) < n {
+		r.cond.Wait()
+	}
 }

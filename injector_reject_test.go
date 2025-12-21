@@ -2,7 +2,6 @@ package fault
 
 import (
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -109,8 +108,8 @@ func TestRejectInjectorReporterStates(t *testing.T) {
 	// This will panic with http.ErrAbortHandler
 	_ = testRequestExpectPanic(t, f)
 
-	// Give the goroutine time to run (reporter is called with 'go')
-	time.Sleep(50 * time.Millisecond)
+	// Wait for both StateStarted and StateFinished to be reported (called via goroutines)
+	reporter.waitForStates(2)
 
 	assert.True(t, reporter.hasState(StateStarted), "expected StateStarted to be reported")
 	assert.True(t, reporter.hasState(StateFinished), "expected StateFinished to be reported")
