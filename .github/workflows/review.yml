@@ -23,6 +23,8 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           track_progress: true
+          use_sticky_comment: true
+          allowed_bots: renovate[bot]
           additional_permissions: |
             actions: read
           prompt: |
