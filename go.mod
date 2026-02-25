@@ -1,6 +1,6 @@
 module github.com/lingrino/go-fault
 
-go 1.24.7
+go 1.26.0
 
 require github.com/stretchr/testify v1.11.1
 
