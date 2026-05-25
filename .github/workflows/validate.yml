@@ -21,7 +21,7 @@ jobs:
       - name: format
         run: test -z $(gofmt -l -w -s ./)
       - name: lint
-        uses: golangci/golangci-lint-action@v9.2.0
+        uses: golangci/golangci-lint-action@v9.2.1
       - name: test
         run: go test -v -race -cover -coverprofile=coverage.txt ./... | tee -a test-results.txt
       - name: enforce 100% test coverage
