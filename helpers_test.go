@@ -30,7 +30,7 @@ func testRequest(t *testing.T, f *Fault) *httptest.ResponseRecorder {
 		http.Error(w, testHandlerBody, testHandlerCode)
 	})
 
-	req := httptest.NewRequest("GET", "/", nil)
+	req := httptest.NewRequestWithContext(t.Context(), "GET", "/", nil)
 	req.Header.Add(testHeaderKey, testHeaderVal)
 
 	rr := httptest.NewRecorder()
