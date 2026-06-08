@@ -449,7 +449,7 @@ func TestFaultConcurrentAccess(t *testing.T) {
 	go func() {
 		defer wg.Done()
 		for i := 0; i < iterations; i++ {
-			req := httptest.NewRequest("GET", "/", nil)
+			req := httptest.NewRequestWithContext(t.Context(), "GET", "/", nil)
 			rr := httptest.NewRecorder()
 			handler.ServeHTTP(rr, req)
 		}
