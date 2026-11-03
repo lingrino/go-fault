@@ -7,6 +7,9 @@
   "schedule": [
     "before 8am on monday"
   ],
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
   "prHourlyLimit": 0,
   "prConcurrentLimit": 100,
   "reviewers": [
