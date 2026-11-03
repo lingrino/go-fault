@@ -20,6 +20,8 @@ jobs:
         uses: actions/checkout@v7
       - name: format
         run: test -z $(gofmt -l -w -s ./)
+      - name: go mod tidy
+        run: go mod tidy -diff
       - name: lint
         uses: golangci/golangci-lint-action@v9.3.0
       - name: test
